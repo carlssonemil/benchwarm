@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Benchwarm
 
-## Getting Started
+Weighted spin-the-wheel lineup picker for game teams. No spreadsheets, no accounts.
 
-First, run the development server:
+## What it does
+
+When a team has more players than match slots, Benchwarm fairly decides who plays each week using a weighted random draw. Players who sit out accumulate "bank entries" that increase their chances in future spins. A player who sits out two consecutive matches is guaranteed a spot next time.
+
+**Match flow:**
+1. Mark which players are available for the match
+2. Review each player's bank entries and guaranteed status
+3. Spin the wheel — guaranteed players are auto-included, the rest drawn by weight
+4. Confirm the result and record the match
+
+## Tech stack
+
+- **Next.js 16** (App Router, Server Actions, React 19)
+- **Neon Postgres** (serverless)
+- **Tailwind CSS 4** + **shadcn/ui**
+- **Framer Motion** (wheel animation)
+- **TypeScript**
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 20+
+- A [Neon](https://neon.tech) database (or any Postgres instance)
+
+### Setup
+
+```bash
+npm install
+```
+
+Create a `.env.local` file:
+
+```
+DATABASE_URL=your_neon_connection_string
+```
+
+Apply the schema:
+
+```bash
+psql $DATABASE_URL -f schema.sql
+```
+
+Run the dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## How it works
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**No accounts.** Teams are created with a unique slug and a 4-digit admin PIN. Anyone with the link can view the team; write operations require the PIN.
 
-## Learn More
+**Seasons** group matches together. Only one season can be active at a time.
 
-To learn more about Next.js, take a look at the following resources:
+**Bank entries** are derived at runtime from match history — never stored directly. This means the fairness calculation is always consistent and auditable.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Selection algorithm** (`src/lib/selection.ts`):
+- Players guaranteed a spot (2+ consecutive sit-outs) are picked first
+- Remaining slots filled via weighted random draw from the available pool
+- Each bank entry adds one ticket to the draw
