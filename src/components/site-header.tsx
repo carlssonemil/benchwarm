@@ -17,7 +17,7 @@ export function SiteHeader() {
         </Link>
 
         <a
-          href="#"
+          href="https://github.com/carlssonemil/benchwarm"
           aria-label="GitHub"
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
