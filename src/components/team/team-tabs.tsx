@@ -25,6 +25,7 @@ export function TeamTabs({ children }: { children: React.ReactNode }) {
     const active = wrapper.querySelector('[data-state="active"]') as HTMLElement | null
     if (!active) return
     setIndicator({ left: active.offsetLeft, width: active.offsetWidth })
+    active.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
   }, [tab])
 
   const handleTabChange = useCallback((value: string) => {
@@ -40,38 +41,43 @@ export function TeamTabs({ children }: { children: React.ReactNode }) {
 
   return (
     <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
-      <div ref={wrapperRef} className="relative border-b border-border">
-        <TabsList
-          variant="line"
-          className="w-full justify-start gap-4 border-none [&>[data-slot=tabs-trigger]]:flex-none [&>[data-slot=tabs-trigger]]:after:hidden"
+      <div className="border-b border-border">
+        <div
+          ref={wrapperRef}
+          className="relative overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <TabsTrigger value="matches" className="flex items-center gap-1.5">
-            <CalendarIcon className="size-3.5" />
-            Matches
-          </TabsTrigger>
-          <TabsTrigger value="roster" className="flex items-center gap-1.5">
-            <Users2Icon className="size-3.5" />
-            Roster
-          </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-1.5">
-            <HistoryIcon className="size-3.5" />
-            History
-          </TabsTrigger>
-          <TabsTrigger value="stats" className="flex items-center gap-1.5">
-            <BarChart3Icon className="size-3.5" />
-            Stats
-          </TabsTrigger>
-          <TabsTrigger value="seasons" className="flex items-center gap-1.5">
-            <TrophyIcon className="size-3.5" />
-            Seasons
-          </TabsTrigger>
-        </TabsList>
-        {indicator && (
-          <div
-            className="absolute bottom-0 h-0.5 bg-foreground transition-all duration-200 ease-in-out"
-            style={{ left: indicator.left, width: indicator.width }}
-          />
-        )}
+          <TabsList
+            variant="line"
+            className="w-full justify-start gap-4 border-none [&>[data-slot=tabs-trigger]]:flex-none [&>[data-slot=tabs-trigger]]:after:hidden"
+          >
+            <TabsTrigger value="matches" className="flex items-center gap-1.5">
+              <CalendarIcon className="size-3.5" />
+              Matches
+            </TabsTrigger>
+            <TabsTrigger value="roster" className="flex items-center gap-1.5">
+              <Users2Icon className="size-3.5" />
+              Roster
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-1.5">
+              <HistoryIcon className="size-3.5" />
+              History
+            </TabsTrigger>
+            <TabsTrigger value="stats" className="flex items-center gap-1.5">
+              <BarChart3Icon className="size-3.5" />
+              Stats
+            </TabsTrigger>
+            <TabsTrigger value="seasons" className="flex items-center gap-1.5">
+              <TrophyIcon className="size-3.5" />
+              Seasons
+            </TabsTrigger>
+          </TabsList>
+          {indicator && (
+            <div
+              className="absolute bottom-0 h-0.5 bg-foreground transition-all duration-200 ease-in-out"
+              style={{ left: indicator.left, width: indicator.width }}
+            />
+          )}
+        </div>
       </div>
       {children}
     </Tabs>
