@@ -52,10 +52,12 @@ export function MatchCard({ match, isAdmin, onDelete, onRevert, onEdit }: MatchC
   }
 
   return (
-    <Card>
+    <Card
+      className="cursor-pointer select-none"
+      onClick={() => setExpanded(e => !e)}
+    >
       <CardHeader
-        className={`cursor-pointer select-none transition-[padding] duration-200 ease-in-out ${expanded ? 'pb-3' : ''}`}
-        onClick={() => setExpanded(e => !e)}
+        className={`transition-[padding] duration-200 ease-in-out ${expanded ? 'pb-3' : ''}`}
       >
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-col gap-0.5">
