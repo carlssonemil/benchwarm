@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -17,11 +18,44 @@ import {
 } from '@/components/ui/alert-dialog'
 import { CreateSeasonDialog } from './create-season-dialog'
 import { endSeason } from '@/actions/season-actions'
+import { getMatchesBySeasonId } from '@/actions/match-actions'
 import { useAdmin } from '@/hooks/use-admin'
 import { toast } from 'sonner'
-import { CalendarIcon, PlusIcon, LockIcon, StopCircleIcon, SwordsIcon } from 'lucide-react'
+import { CalendarIcon, PlusIcon, LockIcon, StopCircleIcon, SwordsIcon, ChevronDownIcon } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import type { Season, Team } from '@/types/database'
+import type { Season, Match, Team } from '@/types/database'
+
+function MatchList({ matches, loading }: { matches: Match[] | undefined; loading: boolean }) {
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-1 px-4 pb-3">
+        <div className="h-4 w-3/4 rounded bg-muted animate-pulse" />
+        <div className="h-4 w-1/2 rounded bg-muted animate-pulse" />
+      </div>
+    )
+  }
+
+  if (!matches || matches.length === 0) {
+    return (
+      <p className="px-4 pb-3 text-xs text-muted-foreground/60">No matches played.</p>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-0 px-4 pb-3">
+      {matches.map(match => (
+        <div key={match.id} className="flex items-center gap-2 py-1">
+          <span className="text-xs text-muted-foreground">
+            {match.title ?? formatDate(match.played_at)}
+          </span>
+          {match.title && (
+            <span className="text-xs text-muted-foreground/50">{formatDate(match.played_at)}</span>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return ''
@@ -47,6 +81,24 @@ export function SeasonManager({ team, initialSeasons }: SeasonManagerProps) {
   const activeSeason = initialSeasons.find(s => s.is_active) ?? null
   const pastSeasons = initialSeasons.filter(s => !s.is_active)
 
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [matchesCache, setMatchesCache] = useState<Record<string, Match[]>>({})
+  const [loadingId, setLoadingId] = useState<string | null>(null)
+
+  async function toggleExpand(seasonId: string) {
+    if (expandedId === seasonId) {
+      setExpandedId(null)
+      return
+    }
+    setExpandedId(seasonId)
+    if (!matchesCache[seasonId]) {
+      setLoadingId(seasonId)
+      const matches = await getMatchesBySeasonId(seasonId)
+      setMatchesCache(prev => ({ ...prev, [seasonId]: matches.filter(m => m.status === 'completed') }))
+      setLoadingId(null)
+    }
+  }
+
   function handleEndSeason() {
     if (!confirmEndId) return
     startTransition(async () => {
@@ -67,8 +119,11 @@ export function SeasonManager({ team, initialSeasons }: SeasonManagerProps) {
     <div className="flex flex-col gap-6">
       {/* Active season */}
       {activeSeason ? (
-        <div className="flex flex-col gap-3 rounded-xl border p-4">
-          <div className="flex items-center justify-between gap-2">
+        <div
+          className="flex flex-col rounded-xl border cursor-pointer select-none"
+          onClick={() => toggleExpand(activeSeason.id)}
+        >
+          <div className={`flex items-center justify-between gap-2 p-4 transition-[padding] duration-200 ease-in-out ${expandedId === activeSeason.id ? 'pb-3' : ''}`}>
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-2">
                 <h3 className="font-medium text-sm">{activeSeason.name}</h3>
@@ -89,18 +144,40 @@ export function SeasonManager({ team, initialSeasons }: SeasonManagerProps) {
               </div>
             </div>
 
-            {isAdmin && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setConfirmEndId(activeSeason.id)}
-                disabled={isPending}
-              >
-                <StopCircleIcon className="size-3.5" />
-                End season
-              </Button>
-            )}
+            <div className="flex items-center gap-2 ml-auto">
+              {isAdmin && (
+                <div onClick={e => e.stopPropagation()}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setConfirmEndId(activeSeason.id)}
+                    disabled={isPending}
+                  >
+                    <StopCircleIcon className="size-3.5" />
+                    End season
+                  </Button>
+                </div>
+              )}
+              <ChevronDownIcon className={`size-4 text-muted-foreground transition-transform shrink-0 ${expandedId === activeSeason.id ? 'rotate-180' : ''}`} />
+            </div>
           </div>
+
+          <AnimatePresence initial={false}>
+            {expandedId === activeSeason.id && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2, ease: 'easeInOut' }}
+                style={{ overflow: 'hidden' }}
+              >
+                <MatchList
+                  matches={matchesCache[activeSeason.id]}
+                  loading={loadingId === activeSeason.id}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       ) : (
         <div className="flex flex-col items-center gap-3 py-10 text-center">
@@ -156,22 +233,47 @@ export function SeasonManager({ team, initialSeasons }: SeasonManagerProps) {
 
           <div className="flex flex-col gap-1">
             {pastSeasons.map(season => (
-              <div key={season.id} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted/50">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-sm text-muted-foreground">{season.name}</span>
-                  
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="text-xs text-muted-foreground/70">
-                      {season.start_date ? formatDate(season.start_date) : formatDate(season.created_at)}
-                      {season.end_date ? ` – ${formatDate(season.end_date)}` : ''}
-                    </span>
+              <div
+                key={season.id}
+                className="flex flex-col rounded-lg hover:bg-muted/50 cursor-pointer select-none"
+                onClick={() => toggleExpand(season.id)}
+              >
+                <div className={`flex items-center justify-between px-3 py-2 transition-[padding] duration-200 ease-in-out ${expandedId === season.id ? 'pb-1.5' : ''}`}>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm text-muted-foreground">{season.name}</span>
 
-                    <span className="text-xs text-muted-foreground/70 flex items-center gap-1">
-                      <SwordsIcon className="size-3" />
-                      {season.match_count} {season.match_count === 1 ? 'match' : 'matches'}
-                    </span>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="text-xs text-muted-foreground/70">
+                        {season.start_date ? formatDate(season.start_date) : formatDate(season.created_at)}
+                        {season.end_date ? ` – ${formatDate(season.end_date)}` : ''}
+                      </span>
+
+                      <span className="text-xs text-muted-foreground/70 flex items-center gap-1">
+                        <SwordsIcon className="size-3" />
+                        {season.match_count} {season.match_count === 1 ? 'match' : 'matches'}
+                      </span>
+                    </div>
                   </div>
+
+                  <ChevronDownIcon className={`size-4 text-muted-foreground/50 transition-transform shrink-0 ${expandedId === season.id ? 'rotate-180' : ''}`} />
                 </div>
+
+                <AnimatePresence initial={false}>
+                  {expandedId === season.id && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: 'easeInOut' }}
+                      style={{ overflow: 'hidden' }}
+                    >
+                      <MatchList
+                        matches={matchesCache[season.id]}
+                        loading={loadingId === season.id}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ))}
           </div>
