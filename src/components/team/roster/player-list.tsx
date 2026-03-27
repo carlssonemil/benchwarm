@@ -27,8 +27,9 @@ export function PlayerList({ team, initialPlayers, activeSeason }: PlayerListPro
   const [isPending, startTransition] = useTransition()
   const [bankData, setBankData] = useState<PlayerWithBank[]>([])
 
-  const active = initialPlayers.filter(p => p.is_active)
-  const inactive = initialPlayers.filter(p => !p.is_active)
+  const collator = new Intl.Collator(undefined, { sensitivity: 'base' })
+  const active = initialPlayers.filter(p => p.is_active).sort((a, b) => collator.compare(a.name, b.name))
+  const inactive = initialPlayers.filter(p => !p.is_active).sort((a, b) => collator.compare(a.name, b.name))
 
   // Stable color assignment by player index in the active list
   const colorMap = new Map(active.map((p, i) => [p.id, PLAYER_COLORS[i % PLAYER_COLORS.length]]))
