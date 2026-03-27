@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CalendarIcon, Users2Icon, HistoryIcon, TrophyIcon, BarChart3Icon } from 'lucide-react'
@@ -13,9 +13,8 @@ function resolveTab(value: string | null): Tab {
 }
 
 export function TeamTabs({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
   const searchParams = useSearchParams()
-  const tab = resolveTab(searchParams.get('tab'))
+  const [tab, setTab] = useState<Tab>(() => resolveTab(searchParams.get('tab')))
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null)
 
@@ -29,15 +28,16 @@ export function TeamTabs({ children }: { children: React.ReactNode }) {
   }, [tab])
 
   const handleTabChange = useCallback((value: string) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (value === 'matches') {
-      params.delete('tab')
+    const resolved = resolveTab(value)
+    setTab(resolved)
+    const url = new URL(window.location.href)
+    if (resolved === 'matches') {
+      url.searchParams.delete('tab')
     } else {
-      params.set('tab', value)
+      url.searchParams.set('tab', resolved)
     }
-    const query = params.toString()
-    router.replace(query ? `?${query}` : window.location.pathname, { scroll: false })
-  }, [router, searchParams])
+    window.history.replaceState(null, '', url)
+  }, [])
 
   return (
     <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
