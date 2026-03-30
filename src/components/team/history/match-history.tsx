@@ -89,9 +89,9 @@ export function MatchHistory({ seasons, teamSlug, team, activePlayers }: MatchHi
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-auto">
             <SelectValue placeholder="Select season" />
           </SelectTrigger>
           
@@ -109,7 +109,7 @@ export function MatchHistory({ seasons, teamSlug, team, activePlayers }: MatchHi
         {isAdmin && selectedSeasonId !== 'all' && (
           <Button
             variant="outline"
-            className="ml-auto"
+            className="ml-auto sm:ml-0 w-full sm:w-auto"
             onClick={() => {
               setEditingMatch(undefined)
               setRecordOpen(true)

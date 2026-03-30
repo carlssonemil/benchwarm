@@ -62,26 +62,29 @@ export function MatchCard({ match, isAdmin, onDelete, onRevert, onEdit, onNoShow
       <CardHeader
         className={`transition-[padding] duration-200 ease-in-out ${expanded ? 'pb-3' : ''}`}
       >
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex flex-col gap-0.5">
-            <p className="font-semibold text-sm">{match.title || formatDate(match.played_at)}</p>
-            {match.title && (
-              <p className="text-xs text-muted-foreground">{formatDate(match.played_at)}</p>
-            )}
-          </div>
+        <div className="flex flex-col gap-2">
+          {/* Title row: title+date on left, actions on right */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex flex-col gap-0.5">
+              <p className="font-semibold text-sm">{match.title || formatDate(match.played_at)}</p>
+              {match.title && (
+                <p className="text-xs text-muted-foreground">{formatDate(match.played_at)}</p>
+              )}
+            </div>
 
-          <div className="flex items-center gap-2">
-            {noShows.length > 0 && (
-              <Badge variant="secondary" className="text-xs bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300 shrink-0">
-                {noShows.length} no-show{noShows.length > 1 ? 's' : ''}
-              </Badge>
-            )}
-            {replacements.length > 0 && (
-              <Badge variant="secondary" className="text-xs bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300 shrink-0">
-                {replacements.length} stepped in
-              </Badge>
-            )}
-            {isAdmin && (<>
+            <div className="flex items-center gap-2">
+              {/* Badges inline on sm+, hidden on mobile */}
+              {noShows.length > 0 && (
+                <Badge variant="secondary" className="hidden sm:inline-flex text-xs bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300 shrink-0">
+                  {noShows.length} no-show{noShows.length > 1 ? 's' : ''}
+                </Badge>
+              )}
+              {replacements.length > 0 && (
+                <Badge variant="secondary" className="hidden sm:inline-flex text-xs bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300 shrink-0">
+                  {replacements.length} stepped in
+                </Badge>
+              )}
+              {isAdmin && (<>
               <div onClick={e => e.stopPropagation()}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -129,8 +132,25 @@ export function MatchCard({ match, isAdmin, onDelete, onRevert, onEdit, onNoShow
               </div>
             </>)}
 
-            <ChevronDownIcon className={`size-4 text-muted-foreground transition-transform shrink-0 ${expanded ? 'rotate-180' : ''}`} />
+              <ChevronDownIcon className={`size-4 text-muted-foreground transition-transform shrink-0 ${expanded ? 'rotate-180' : ''}`} />
+            </div>
           </div>
+
+          {/* Badges row: mobile only */}
+          {(noShows.length > 0 || replacements.length > 0) && (
+            <div className="flex items-center gap-2 sm:hidden">
+              {noShows.length > 0 && (
+                <Badge variant="secondary" className="text-xs bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300">
+                  {noShows.length} no-show{noShows.length > 1 ? 's' : ''}
+                </Badge>
+              )}
+              {replacements.length > 0 && (
+                <Badge variant="secondary" className="text-xs bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300">
+                  {replacements.length} stepped in
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
       </CardHeader>
 

@@ -68,5 +68,5 @@ export interface PlayerStat {
   timesUnavailable: number
   timesNoShow: number
   currentBank: number
-  currentStreak: number
+  playRate: number | null
 }

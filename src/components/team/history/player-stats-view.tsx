@@ -41,8 +41,9 @@ export function PlayerStatsView({ seasons, team }: PlayerStatsViewProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="w-full sm:self-start sm:w-auto">
       <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
-        <SelectTrigger className="w-48">
+        <SelectTrigger className="w-full sm:w-auto">
           <SelectValue placeholder="Select season" />
         </SelectTrigger>
         
@@ -56,6 +57,7 @@ export function PlayerStatsView({ seasons, team }: PlayerStatsViewProps) {
           ))}
         </SelectContent>
       </Select>
+      </div>
 
       {isLoading ? (
         <div className="flex flex-col animate-pulse">

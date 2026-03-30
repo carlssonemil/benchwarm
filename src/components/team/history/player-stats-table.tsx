@@ -9,10 +9,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ChevronUpIcon, ChevronDownIcon } from 'lucide-react'
+import { ChevronUpIcon, ChevronDownIcon, InfoIcon } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { PlayerStat } from '@/types/database'
 
-type SortKey = 'name' | 'gamesPlayed' | 'gamesSatOut' | 'timesUnavailable' | 'timesNoShow' | 'currentBank' | 'currentStreak'
+type SortKey = 'name' | 'gamesPlayed' | 'gamesSatOut' | 'timesUnavailable' | 'timesNoShow' | 'currentBank' | 'playRate'
 
 interface PlayerStatsTableProps {
   stats: PlayerStat[]
@@ -45,8 +46,8 @@ export function PlayerStatsTable({ stats }: PlayerStatsTableProps) {
       av = a.player.name
       bv = b.player.name
     } else {
-      av = a[sortKey]
-      bv = b[sortKey]
+      av = a[sortKey] ?? -1
+      bv = b[sortKey] ?? -1
     }
     if (av < bv) return sortAsc ? -1 : 1
     if (av > bv) return sortAsc ? 1 : -1
@@ -60,7 +61,7 @@ export function PlayerStatsTable({ stats }: PlayerStatsTableProps) {
     { key: 'timesUnavailable', label: 'Unavail.', title: 'Times marked unavailable' },
     { key: 'timesNoShow', label: 'No-show', title: 'Times selected but did not show up' },
     { key: 'currentBank', label: 'Bank', title: 'Current wheel entries' },
-    { key: 'currentStreak', label: 'Streak', title: 'Consecutive sit-outs' },
+    { key: 'playRate', label: 'Play %' },
   ]
 
   return (
@@ -76,6 +77,14 @@ export function PlayerStatsTable({ stats }: PlayerStatsTableProps) {
             >
               <span className="inline-flex items-center gap-1">
                 {col.label}
+                {col.key === 'playRate' && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <InfoIcon className="size-3 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>% of available matches played</TooltipContent>
+                  </Tooltip>
+                )}
                 {sortKey === col.key ? (
                   sortAsc ? (
                     <ChevronUpIcon className="size-3" />
@@ -109,9 +118,9 @@ export function PlayerStatsTable({ stats }: PlayerStatsTableProps) {
               </span>
             </TableCell>
             <TableCell>
-              {s.currentStreak > 0 ? (
-                <span className={s.currentStreak >= 2 ? 'font-semibold text-amber-600 dark:text-amber-400' : ''}>
-                  {s.currentStreak}
+              {s.playRate !== null ? (
+                <span className={s.playRate < 0.5 ? 'text-amber-600 dark:text-amber-400' : ''}>
+                  {Math.round(s.playRate * 100)}%
                 </span>
               ) : (
                 <span className="text-muted-foreground">—</span>

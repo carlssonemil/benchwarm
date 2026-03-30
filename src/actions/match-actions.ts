@@ -630,7 +630,6 @@ export async function getPlayerStats(seasonId: string, teamId?: string): Promise
       let timesUnavailable = 0
       let timesNoShow = 0
       let currentBank = 1
-      let currentStreak = 0
       let bankDone = false
 
       for (const r of records) {
@@ -642,17 +641,17 @@ export async function getPlayerStats(seasonId: string, teamId?: string): Promise
         if (!bankDone) {
           if (r.was_available && !r.was_selected) {
             currentBank++
-            currentStreak++
           } else if (!r.was_available) {
             currentBank++
-            currentStreak++
           } else {
             bankDone = true
           }
         }
       }
 
-      return { player, gamesPlayed, gamesSatOut, timesUnavailable, timesNoShow, currentBank, currentStreak }
+      const available = gamesPlayed + gamesSatOut
+      const playRate = available > 0 ? gamesPlayed / available : null
+      return { player, gamesPlayed, gamesSatOut, timesUnavailable, timesNoShow, currentBank, playRate }
     })
     .sort((a, b) => a.player.name.localeCompare(b.player.name))
 }
