@@ -36,7 +36,7 @@ export function WheelControls({
   return (
     <div className="flex flex-col items-center gap-3 pt-1">
       <AnimatePresence mode="wait">
-        {phase === 'ready' && !(autoSpin && spinIndex > 0) && (
+        {phase === 'ready' && spinIndex === 0 && (
           <motion.div
             key="spin-btn"
             initial={{ opacity: 0, y: 8 }}

@@ -140,10 +140,10 @@ export function WheelStep({ bankedPlayers, matchSize, onBack, onConfirm, stepInd
 
   // Auto-trigger the next spin after the wheel remounts between picks
   useEffect(() => {
-    if (!autoSpin || phase !== 'ready' || spinIndex === 0) return
+    if (phase !== 'ready' || spinIndex === 0) return
     const t = setTimeout(handleSpin, 300)
     return () => clearTimeout(t)
-  }, [autoSpin, phase, spinIndex, handleSpin])
+  }, [phase, spinIndex, handleSpin])
 
   // ── No-spin edge case ─────────────────────────────────────────────────────
   if (noSpinNeeded) {
