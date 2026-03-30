@@ -236,7 +236,8 @@ export async function computePlayerBanks(
     SELECT
       gp.player_id,
       gp.was_available,
-      gp.was_selected
+      gp.was_selected,
+      gp.was_replacement
     FROM match_players gp
     JOIN matches g ON g.id = gp.match_id
     WHERE g.season_id = ${seasonId} AND g.status = 'completed'
@@ -244,16 +245,18 @@ export async function computePlayerBanks(
   `
 
   // Group rows by player_id — already in reverse chronological order
-  const byPlayer = new Map<string, Array<{ was_available: boolean; was_selected: boolean }>>()
+  const byPlayer = new Map<string, Array<{ was_available: boolean; was_selected: boolean; was_replacement: boolean }>>()
   for (const row of history as Array<{
     player_id: string
     was_available: boolean
     was_selected: boolean
+    was_replacement: boolean
   }>) {
     if (!byPlayer.has(row.player_id)) byPlayer.set(row.player_id, [])
     byPlayer.get(row.player_id)!.push({
       was_available: row.was_available,
       was_selected: row.was_selected,
+      was_replacement: row.was_replacement,
     })
   }
 
@@ -263,7 +266,9 @@ export async function computePlayerBanks(
     let consecutiveSitOuts = 0
 
     for (const entry of playerHistory) {
-      if (entry.was_available && !entry.was_selected) {
+      if (entry.was_replacement) {
+        break // played as replacement — streak stops
+      } else if (entry.was_available && !entry.was_selected) {
         bank += 1
         consecutiveSitOuts += 1
       } else if (!entry.was_available) {
@@ -639,7 +644,9 @@ export async function getPlayerStats(seasonId: string, teamId?: string): Promise
         else timesUnavailable++
 
         if (!bankDone) {
-          if (r.was_available && !r.was_selected) {
+          if (r.was_replacement) {
+            bankDone = true
+          } else if (r.was_available && !r.was_selected) {
             currentBank++
           } else if (!r.was_available) {
             currentBank++
