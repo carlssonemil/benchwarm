@@ -71,9 +71,14 @@ export function MatchCard({ match, isAdmin, onDelete, onRevert, onEdit, onNoShow
           </div>
 
           <div className="flex items-center gap-2">
-            {playing.length > 0 && (
-              <Badge variant="secondary" className="text-xs bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 shrink-0">
-                {playing.length} playing
+            {noShows.length > 0 && (
+              <Badge variant="secondary" className="text-xs bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300 shrink-0">
+                {noShows.length} no-show{noShows.length > 1 ? 's' : ''}
+              </Badge>
+            )}
+            {replacements.length > 0 && (
+              <Badge variant="secondary" className="text-xs bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300 shrink-0">
+                {replacements.length} stepped in
               </Badge>
             )}
             {isAdmin && (<>
