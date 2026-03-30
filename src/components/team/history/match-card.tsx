@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { MoreHorizontalIcon, PencilIcon, Undo2Icon, Trash2Icon, ChevronDownIcon } from 'lucide-react'
+import { MoreHorizontalIcon, PencilIcon, Undo2Icon, Trash2Icon, ChevronDownIcon, UserXIcon } from 'lucide-react'
 import type { MatchWithPlayers } from '@/types/database'
 
 interface MatchCardProps {
@@ -22,6 +22,7 @@ interface MatchCardProps {
   onDelete: () => Promise<void>
   onRevert: () => Promise<void>
   onEdit: () => void
+  onNoShow: () => void
 }
 
 function formatDate(dateStr: string) {
@@ -32,13 +33,15 @@ function formatDate(dateStr: string) {
   })
 }
 
-export function MatchCard({ match, isAdmin, onDelete, onRevert, onEdit }: MatchCardProps) {
+export function MatchCard({ match, isAdmin, onDelete, onRevert, onEdit, onNoShow }: MatchCardProps) {
   const [isActing, setIsActing] = useState(false)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [expanded, setExpanded] = useState(false)
 
-  const playing = match.players.filter(p => p.was_selected)
-  const satOut = match.players.filter(p => p.was_available && !p.was_selected)
+  const playing = match.players.filter(p => p.was_selected && !p.was_no_show)
+  const noShows = match.players.filter(p => p.was_no_show)
+  const replacements = match.players.filter(p => p.was_replacement)
+  const satOut = match.players.filter(p => p.was_available && !p.was_selected && !p.was_replacement)
   const unavailable = match.players.filter(p => !p.was_available)
 
   async function handleDelete() {
@@ -86,6 +89,11 @@ export function MatchCard({ match, isAdmin, onDelete, onRevert, onEdit }: MatchC
                     <DropdownMenuItem onClick={onEdit}>
                       <PencilIcon className="size-3.5" />
                       Edit
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem onClick={onNoShow}>
+                      <UserXIcon className="size-3.5" />
+                      Report no-shows
                     </DropdownMenuItem>
 
                     <DropdownMenuItem onClick={handleRevert}>
@@ -138,6 +146,20 @@ export function MatchCard({ match, isAdmin, onDelete, onRevert, onEdit }: MatchC
                   variant="playing"
                 />
               )}
+              {noShows.length > 0 && (
+                <PlayerGroup
+                  label="No-show"
+                  players={noShows.map(p => p.player.name)}
+                  variant="noshow"
+                />
+              )}
+              {replacements.length > 0 && (
+                <PlayerGroup
+                  label="Stepped in"
+                  players={replacements.map(p => p.player.name)}
+                  variant="replacement"
+                />
+              )}
               {satOut.length > 0 && (
                 <PlayerGroup
                   label="Sat out"
@@ -167,21 +189,29 @@ function PlayerGroup({
 }: {
   label: string
   players: string[]
-  variant: 'playing' | 'satout' | 'unavailable'
+  variant: 'playing' | 'noshow' | 'replacement' | 'satout' | 'unavailable'
 }) {
   const dotColor =
     variant === 'playing'
       ? 'bg-emerald-500'
-      : variant === 'satout'
-        ? 'bg-amber-500'
-        : 'bg-muted-foreground/40'
+      : variant === 'noshow'
+        ? 'bg-rose-500'
+        : variant === 'replacement'
+          ? 'bg-sky-500'
+          : variant === 'satout'
+            ? 'bg-amber-500'
+            : 'bg-muted-foreground/40'
 
   const pillClass =
     variant === 'playing'
       ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
-      : variant === 'satout'
-        ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
-        : 'bg-muted text-muted-foreground'
+      : variant === 'noshow'
+        ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300'
+        : variant === 'replacement'
+          ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300'
+          : variant === 'satout'
+            ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
+            : 'bg-muted text-muted-foreground'
 
   return (
     <div className="flex flex-col gap-1.5">

@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DatePicker } from '@/components/ui/date-picker'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { saveMatch, updateMatch } from '@/actions/match-actions'
 import { toast } from 'sonner'
 import type { MatchWithPlayers, Player, Team } from '@/types/database'
@@ -31,6 +32,8 @@ interface PlayerRow {
   player: Player
   available: boolean
   played: boolean
+  noShow: boolean
+  replacement: boolean
 }
 
 function todayISO() {
@@ -81,20 +84,22 @@ export function RecordMatchDialog({
           player: ep.player,
           available: ep.was_available,
           played: ep.was_selected,
+          noShow: ep.was_no_show,
+          replacement: ep.was_replacement,
         })
       }
 
       // Then: currently active players NOT already in the match
       for (const p of activePlayers) {
         if (!allPlayerIds.has(p.id)) {
-          rows.push({ player: p, available: false, played: false })
+          rows.push({ player: p, available: false, played: false, noShow: false, replacement: false })
         }
       }
 
       setPlayerRows(rows)
     } else {
       // New match: all active players, none marked available by default
-      setPlayerRows(activePlayers.map(p => ({ player: p, available: false, played: false })))
+      setPlayerRows(activePlayers.map(p => ({ player: p, available: false, played: false, noShow: false, replacement: false })))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, existingMatch])
@@ -103,14 +108,26 @@ export function RecordMatchDialog({
     setPlayerRows(rows =>
       rows.map(r =>
         r.player.id === playerId
-          ? { ...r, available, played: available ? r.played : false }
+          ? { ...r, available, played: available ? r.played : false, noShow: false, replacement: false }
           : r,
       ),
     )
   }
 
   function setPlayed(playerId: string, played: boolean) {
-    setPlayerRows(rows => rows.map(r => (r.player.id === playerId ? { ...r, played } : r)))
+    setPlayerRows(rows =>
+      rows.map(r =>
+        r.player.id === playerId ? { ...r, played, noShow: played ? r.noShow : false, replacement: !played ? r.replacement : false } : r,
+      ),
+    )
+  }
+
+  function setNoShow(playerId: string, noShow: boolean) {
+    setPlayerRows(rows => rows.map(r => (r.player.id === playerId ? { ...r, noShow } : r)))
+  }
+
+  function setReplacement(playerId: string, replacement: boolean) {
+    setPlayerRows(rows => rows.map(r => (r.player.id === playerId ? { ...r, replacement } : r)))
   }
 
   function handleSave() {
@@ -125,6 +142,8 @@ export function RecordMatchDialog({
       wasSelected: r.played,
       bankEntriesAtSpin: 0,
       wasGuaranteed: false,
+      wasNoShow: r.noShow,
+      wasReplacement: r.replacement,
     }))
 
     startTransition(async () => {
@@ -204,21 +223,30 @@ export function RecordMatchDialog({
 
               <span className="text-xs text-muted-foreground">
                 {playedCount} played · {availableCount - playedCount} sat out
+                {playerRows.some(r => r.noShow) && (
+                  <span className="text-rose-600 dark:text-rose-400"> · {playerRows.filter(r => r.noShow).length} no-show</span>
+                )}
               </span>
             </div>
 
             <div className="flex flex-col gap-0.5">
               {/* Header row */}
-              <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 px-3 pb-1">
+              <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 px-3 pb-1">
                 <span />
                 <span className="text-xs text-muted-foreground w-16 text-center">Available</span>
                 <span className="text-xs text-muted-foreground w-12 text-center">Played</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-xs text-muted-foreground w-12 text-center cursor-default">NS/Sub</span>
+                  </TooltipTrigger>
+                  <TooltipContent>No-show (red) · Stepped in as sub (blue)</TooltipContent>
+                </Tooltip>
               </div>
 
               {playerRows.map(r => (
                 <div
                   key={r.player.id}
-                  className="grid grid-cols-[1fr_auto_auto] gap-x-4 items-center px-3 py-1.5 rounded-lg hover:bg-muted/40"
+                  className="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 items-center px-3 py-1.5 rounded-lg hover:bg-muted/40"
                 >
                   <span className={`text-sm ${!r.available ? 'text-muted-foreground' : ''}`}>
                     {r.player.name}
@@ -238,6 +266,35 @@ export function RecordMatchDialog({
                       onCheckedChange={v => setPlayed(r.player.id, !!v)}
                       disabled={isPending || !r.available}
                     />
+                  </div>
+
+                  <div className="w-12 flex justify-center">
+                    {r.played && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Checkbox
+                            checked={r.noShow}
+                            onCheckedChange={v => setNoShow(r.player.id, !!v)}
+                            disabled={isPending}
+                            className="border-rose-400 data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>No-show — selected but didn&apos;t show up</TooltipContent>
+                      </Tooltip>
+                    )}
+                    {r.available && !r.played && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Checkbox
+                            checked={r.replacement}
+                            onCheckedChange={v => setReplacement(r.player.id, !!v)}
+                            disabled={isPending}
+                            className="border-sky-400 data-[state=checked]:bg-sky-500 data-[state=checked]:border-sky-500"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>Stepped in as replacement — bank is kept</TooltipContent>
+                      </Tooltip>
+                    )}
                   </div>
                 </div>
               ))}

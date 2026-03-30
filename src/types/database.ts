@@ -46,6 +46,8 @@ export interface MatchPlayer {
   was_selected: boolean
   bank_entries_at_spin: number
   was_guaranteed: boolean
+  was_no_show: boolean
+  was_replacement: boolean
 }
 
 // Derived types for UI use
@@ -64,6 +66,7 @@ export interface PlayerStat {
   gamesPlayed: number
   gamesSatOut: number
   timesUnavailable: number
+  timesNoShow: number
   currentBank: number
   currentStreak: number
 }

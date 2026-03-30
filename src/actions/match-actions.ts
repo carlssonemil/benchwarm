@@ -56,6 +56,8 @@ export async function getPlannedMatchesWithPlayers(teamId: string): Promise<Matc
       gp.was_selected,
       gp.bank_entries_at_spin,
       gp.was_guaranteed,
+      gp.was_no_show,
+      gp.was_replacement,
       p.name             AS player_name,
       p.is_active        AS player_is_active,
       p.team_id          AS player_team_id,
@@ -95,6 +97,8 @@ export async function getPlannedMatchesWithPlayers(teamId: string): Promise<Matc
         was_selected: row.was_selected as boolean,
         bank_entries_at_spin: row.bank_entries_at_spin as number,
         was_guaranteed: row.was_guaranteed as boolean,
+        was_no_show: row.was_no_show as boolean,
+        was_replacement: row.was_replacement as boolean,
         player: {
           id: row.player_id as string,
           name: row.player_name as string,
@@ -136,9 +140,9 @@ export async function assignPlayersToPlannedMatch(
   for (const p of players) {
     await sql`
       INSERT INTO match_players
-        (match_id, player_id, was_available, was_selected, bank_entries_at_spin, was_guaranteed)
+        (match_id, player_id, was_available, was_selected, bank_entries_at_spin, was_guaranteed, was_no_show, was_replacement)
       VALUES
-        (${matchId}, ${p.playerId}, ${p.wasAvailable}, ${p.wasSelected}, ${p.bankEntriesAtSpin}, ${p.wasGuaranteed})
+        (${matchId}, ${p.playerId}, ${p.wasAvailable}, ${p.wasSelected}, ${p.bankEntriesAtSpin}, ${p.wasGuaranteed}, false, false)
     `
   }
 
@@ -293,6 +297,8 @@ export async function saveMatch(
       wasSelected: boolean
       bankEntriesAtSpin: number
       wasGuaranteed: boolean
+      wasNoShow?: boolean
+      wasReplacement?: boolean
     }>
   },
 ): Promise<{ error?: string }> {
@@ -316,9 +322,9 @@ export async function saveMatch(
   for (const p of players) {
     await sql`
       INSERT INTO match_players
-        (match_id, player_id, was_available, was_selected, bank_entries_at_spin, was_guaranteed)
+        (match_id, player_id, was_available, was_selected, bank_entries_at_spin, was_guaranteed, was_no_show, was_replacement)
       VALUES
-        (${matchId}, ${p.playerId}, ${p.wasAvailable}, ${p.wasSelected}, ${p.bankEntriesAtSpin}, ${p.wasGuaranteed})
+        (${matchId}, ${p.playerId}, ${p.wasAvailable}, ${p.wasSelected}, ${p.bankEntriesAtSpin}, ${p.wasGuaranteed}, ${p.wasNoShow ?? false}, ${p.wasReplacement ?? false})
     `
   }
 
@@ -337,6 +343,8 @@ export async function getMatchesWithPlayers(seasonId: string, teamId?: string): 
         gp.was_selected,
         gp.bank_entries_at_spin,
         gp.was_guaranteed,
+        gp.was_no_show,
+        gp.was_replacement,
         p.name             AS player_name,
         p.is_active        AS player_is_active,
         p.team_id          AS player_team_id,
@@ -356,6 +364,8 @@ export async function getMatchesWithPlayers(seasonId: string, teamId?: string): 
         gp.was_selected,
         gp.bank_entries_at_spin,
         gp.was_guaranteed,
+        gp.was_no_show,
+        gp.was_replacement,
         p.name             AS player_name,
         p.is_active        AS player_is_active,
         p.team_id          AS player_team_id,
@@ -393,6 +403,8 @@ export async function getMatchesWithPlayers(seasonId: string, teamId?: string): 
       was_selected: row.was_selected as boolean,
       bank_entries_at_spin: row.bank_entries_at_spin as number,
       was_guaranteed: row.was_guaranteed as boolean,
+      was_no_show: row.was_no_show as boolean,
+      was_replacement: row.was_replacement as boolean,
       player: {
         id: row.player_id as string,
         name: row.player_name as string,
@@ -479,6 +491,8 @@ export async function updateMatch(
       wasSelected: boolean
       bankEntriesAtSpin: number
       wasGuaranteed: boolean
+      wasNoShow?: boolean
+      wasReplacement?: boolean
     }>
   },
 ): Promise<{ error?: string }> {
@@ -503,10 +517,42 @@ export async function updateMatch(
   for (const p of players) {
     await sql`
       INSERT INTO match_players
-        (match_id, player_id, was_available, was_selected, bank_entries_at_spin, was_guaranteed)
+        (match_id, player_id, was_available, was_selected, bank_entries_at_spin, was_guaranteed, was_no_show, was_replacement)
       VALUES
-        (${matchId}, ${p.playerId}, ${p.wasAvailable}, ${p.wasSelected}, ${p.bankEntriesAtSpin}, ${p.wasGuaranteed})
+        (${matchId}, ${p.playerId}, ${p.wasAvailable}, ${p.wasSelected}, ${p.bankEntriesAtSpin}, ${p.wasGuaranteed}, ${p.wasNoShow ?? false}, ${p.wasReplacement ?? false})
     `
+  }
+
+  revalidatePath(`/team/${slug}`)
+  return {}
+}
+
+export async function markNoShows(
+  slug: string,
+  pinHash: string,
+  data: {
+    matchId: string
+    noShowPlayerIds: string[]
+    replacementPlayerIds: string[]
+  },
+): Promise<{ error?: string }> {
+  try {
+    await requirePin(slug, pinHash)
+  } catch {
+    return { error: 'Unauthorized.' }
+  }
+
+  const { matchId, noShowPlayerIds, replacementPlayerIds } = data
+
+  // Reset all flags for this match first
+  await sql`UPDATE match_players SET was_no_show = false, was_replacement = false WHERE match_id = ${matchId}`
+
+  for (const playerId of noShowPlayerIds) {
+    await sql`UPDATE match_players SET was_no_show = true WHERE match_id = ${matchId} AND player_id = ${playerId} AND was_selected = true`
+  }
+
+  for (const playerId of replacementPlayerIds) {
+    await sql`UPDATE match_players SET was_replacement = true WHERE match_id = ${matchId} AND player_id = ${playerId} AND was_selected = false`
   }
 
   revalidatePath(`/team/${slug}`)
@@ -523,7 +569,9 @@ export async function getPlayerStats(seasonId: string, teamId?: string): Promise
         p.is_active,
         p.created_at      AS player_created_at,
         gp.was_available,
-        gp.was_selected
+        gp.was_selected,
+        gp.was_no_show,
+        gp.was_replacement
       FROM match_players gp
       JOIN players p ON p.id = gp.player_id
       JOIN matches g ON g.id = gp.match_id
@@ -538,7 +586,9 @@ export async function getPlayerStats(seasonId: string, teamId?: string): Promise
         p.is_active,
         p.created_at      AS player_created_at,
         gp.was_available,
-        gp.was_selected
+        gp.was_selected,
+        gp.was_no_show,
+        gp.was_replacement
       FROM match_players gp
       JOIN players p ON p.id = gp.player_id
       JOIN matches g ON g.id = gp.match_id
@@ -548,7 +598,7 @@ export async function getPlayerStats(seasonId: string, teamId?: string): Promise
 
   const byPlayer = new Map<
     string,
-    { player: Player; records: Array<{ was_available: boolean; was_selected: boolean }> }
+    { player: Player; records: Array<{ was_available: boolean; was_selected: boolean; was_no_show: boolean; was_replacement: boolean }> }
   >()
 
   for (const row of rows as Array<Record<string, unknown>>) {
@@ -568,6 +618,8 @@ export async function getPlayerStats(seasonId: string, teamId?: string): Promise
     byPlayer.get(pid)!.records.push({
       was_available: row.was_available as boolean,
       was_selected: row.was_selected as boolean,
+      was_no_show: row.was_no_show as boolean,
+      was_replacement: row.was_replacement as boolean,
     })
   }
 
@@ -576,12 +628,14 @@ export async function getPlayerStats(seasonId: string, teamId?: string): Promise
       let gamesPlayed = 0
       let gamesSatOut = 0
       let timesUnavailable = 0
+      let timesNoShow = 0
       let currentBank = 1
       let currentStreak = 0
       let bankDone = false
 
       for (const r of records) {
-        if (r.was_selected) gamesPlayed++
+        if (r.was_no_show) timesNoShow++
+        else if (r.was_selected || r.was_replacement) gamesPlayed++
         else if (r.was_available) gamesSatOut++
         else timesUnavailable++
 
@@ -598,7 +652,7 @@ export async function getPlayerStats(seasonId: string, teamId?: string): Promise
         }
       }
 
-      return { player, gamesPlayed, gamesSatOut, timesUnavailable, currentBank, currentStreak }
+      return { player, gamesPlayed, gamesSatOut, timesUnavailable, timesNoShow, currentBank, currentStreak }
     })
     .sort((a, b) => a.player.name.localeCompare(b.player.name))
 }

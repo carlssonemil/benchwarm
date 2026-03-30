@@ -12,7 +12,7 @@ import {
 import { ChevronUpIcon, ChevronDownIcon } from 'lucide-react'
 import type { PlayerStat } from '@/types/database'
 
-type SortKey = 'name' | 'gamesPlayed' | 'gamesSatOut' | 'timesUnavailable' | 'currentBank' | 'currentStreak'
+type SortKey = 'name' | 'gamesPlayed' | 'gamesSatOut' | 'timesUnavailable' | 'timesNoShow' | 'currentBank' | 'currentStreak'
 
 interface PlayerStatsTableProps {
   stats: PlayerStat[]
@@ -58,6 +58,7 @@ export function PlayerStatsTable({ stats }: PlayerStatsTableProps) {
     { key: 'gamesPlayed', label: 'Played', title: 'Games played' },
     { key: 'gamesSatOut', label: 'Sat out', title: 'Games sat out while available' },
     { key: 'timesUnavailable', label: 'Unavail.', title: 'Times marked unavailable' },
+    { key: 'timesNoShow', label: 'No-show', title: 'Times selected but did not show up' },
     { key: 'currentBank', label: 'Bank', title: 'Current wheel entries' },
     { key: 'currentStreak', label: 'Streak', title: 'Consecutive sit-outs' },
   ]
@@ -95,6 +96,13 @@ export function PlayerStatsTable({ stats }: PlayerStatsTableProps) {
             <TableCell>{s.gamesPlayed}</TableCell>
             <TableCell>{s.gamesSatOut}</TableCell>
             <TableCell>{s.timesUnavailable}</TableCell>
+            <TableCell>
+              {s.timesNoShow > 0 ? (
+                <span className="text-rose-600 dark:text-rose-400 font-medium">{s.timesNoShow}</span>
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              )}
+            </TableCell>
             <TableCell>
               <span className={s.currentBank > 1 ? 'font-semibold text-primary' : ''}>
                 {s.currentBank}

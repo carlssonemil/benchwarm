@@ -9,6 +9,7 @@ import { UpcomingMatchCard } from './upcoming-match-card'
 import { PlanMatchDialog } from './plan-match-dialog'
 import { EditPlannedMatchDialog } from './edit-planned-match-dialog'
 import { MatchWizard } from './match-wizard'
+import { NoShowDialog } from './no-show-dialog'
 import {
   getPlannedMatchesWithPlayers,
   completeMatch,
@@ -35,7 +36,9 @@ export function UpcomingMatches({ team, initialSeasons, activePlayers }: Upcomin
   const [planOpen, setPlanOpen] = useState(false)
   const [wizardOpen, setWizardOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
+  const [noShowOpen, setNoShowOpen] = useState(false)
   const [selectedMatch, setSelectedMatch] = useState<MatchWithPlayers | null>(null)
+  const [completingMatch, setCompletingMatch] = useState<MatchWithPlayers | null>(null)
 
   useEffect(() => {
     startLoadTransition(async () => {
@@ -60,8 +63,24 @@ export function UpcomingMatches({ team, initialSeasons, activePlayers }: Upcomin
     const result = await completeMatch(team.slug, pinHash, matchId)
     if (result.error) {
       toast.error(result.error)
+      return
+    }
+
+    toast.success('Match marked as played!')
+
+    // Open no-show dialog if the match had assigned players
+    const match = matches.find(m => m.id === matchId)
+    const hasSelectedPlayers = match?.players.some(p => p.was_selected) ?? false
+
+    if (match && hasSelectedPlayers) {
+      // Refresh matches first so the completed match no longer appears in upcoming,
+      // but keep the match data to show the no-show dialog
+      const freshData = await getPlannedMatchesWithPlayers(team.id)
+      setMatches(freshData)
+      router.refresh()
+      setCompletingMatch(match)
+      setNoShowOpen(true)
     } else {
-      toast.success('Match marked as played!')
       await refresh()
     }
   }
@@ -192,6 +211,22 @@ export function UpcomingMatches({ team, initialSeasons, activePlayers }: Upcomin
           team={team}
           getPinHash={getStoredPinHash}
           onSaved={refresh}
+        />
+      )}
+
+      {completingMatch && (
+        <NoShowDialog
+          open={noShowOpen}
+          onOpenChange={open => {
+            setNoShowOpen(open)
+            if (!open) setCompletingMatch(null)
+          }}
+          match={completingMatch}
+          slug={team.slug}
+          getPinHash={getStoredPinHash}
+          onSaved={() => {
+            setCompletingMatch(null)
+          }}
         />
       )}
     </div>

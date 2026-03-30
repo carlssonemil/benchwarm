@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { PlusIcon } from 'lucide-react'
 import { MatchCard } from './match-card'
 import { RecordMatchDialog } from './record-match-dialog'
+import { NoShowDialog } from '@/components/team/match/no-show-dialog'
 import { getMatchesWithPlayers, deleteMatch, revertMatchToPlanned } from '@/actions/match-actions'
 import { useAdmin } from '@/hooks/use-admin'
 import { toast } from 'sonner'
@@ -35,6 +36,8 @@ export function MatchHistory({ seasons, teamSlug, team, activePlayers }: MatchHi
   const [isLoading, startTransition] = useTransition()
   const [recordOpen, setRecordOpen] = useState(false)
   const [editingMatch, setEditingMatch] = useState<MatchWithPlayers | undefined>(undefined)
+  const [noShowMatch, setNoShowMatch] = useState<MatchWithPlayers | null>(null)
+  const [noShowOpen, setNoShowOpen] = useState(false)
 
   useEffect(() => {
     startTransition(async () => {
@@ -142,6 +145,10 @@ export function MatchHistory({ seasons, teamSlug, team, activePlayers }: MatchHi
                 setEditingMatch(m)
                 setRecordOpen(true)
               }}
+              onNoShow={() => {
+                setNoShowMatch(m)
+                setNoShowOpen(true)
+              }}
             />
           ))}
         </div>
@@ -159,6 +166,20 @@ export function MatchHistory({ seasons, teamSlug, team, activePlayers }: MatchHi
           activePlayers={activePlayers}
           getPinHash={getStoredPinHash}
           existingMatch={editingMatch}
+          onSaved={handleRecordSaved}
+        />
+      )}
+
+      {noShowMatch && (
+        <NoShowDialog
+          open={noShowOpen}
+          onOpenChange={open => {
+            setNoShowOpen(open)
+            if (!open) setNoShowMatch(null)
+          }}
+          match={noShowMatch}
+          slug={teamSlug}
+          getPinHash={getStoredPinHash}
           onSaved={handleRecordSaved}
         />
       )}

@@ -62,7 +62,9 @@ CREATE TABLE match_players (
   was_available       BOOLEAN NOT NULL DEFAULT true,
   was_selected        BOOLEAN NOT NULL DEFAULT false,
   bank_entries_at_spin INTEGER NOT NULL DEFAULT 1,
-  was_guaranteed      BOOLEAN NOT NULL DEFAULT false
+  was_guaranteed      BOOLEAN NOT NULL DEFAULT false,
+  was_no_show         BOOLEAN NOT NULL DEFAULT false,
+  was_replacement     BOOLEAN NOT NULL DEFAULT false
 );
 
 -- ---------------------------------------------------------------------------
