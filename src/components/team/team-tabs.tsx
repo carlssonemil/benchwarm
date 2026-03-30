@@ -15,6 +15,10 @@ function resolveTab(value: string | null): Tab {
 export function TeamTabs({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams()
   const [tab, setTab] = useState<Tab>(() => resolveTab(searchParams.get('tab')))
+
+  useEffect(() => {
+    setTab(resolveTab(searchParams.get('tab')))
+  }, [searchParams])
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null)
 
