@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Table,
   TableBody,
@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ChevronUpIcon, ChevronDownIcon, InfoIcon } from 'lucide-react'
+import { ChevronUpIcon, ChevronDownIcon } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { PlayerStat } from '@/types/database'
 
@@ -22,6 +22,11 @@ interface PlayerStatsTableProps {
 export function PlayerStatsTable({ stats }: PlayerStatsTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('name')
   const [sortAsc, setSortAsc] = useState(true)
+  // Starts false (SSR-safe), updates after mount — no hydration mismatch
+  const [isTouch, setIsTouch] = useState(false)
+  useEffect(() => {
+    setIsTouch(window.matchMedia('(hover: none)').matches)
+  }, [])
 
   if (stats.length === 0) {
     return (
@@ -61,38 +66,45 @@ export function PlayerStatsTable({ stats }: PlayerStatsTableProps) {
     { key: 'timesUnavailable', label: 'Unavail.', title: 'Times marked unavailable' },
     { key: 'timesNoShow', label: 'No-show', title: 'Times selected but did not show up' },
     { key: 'currentBank', label: 'Bank', title: 'Current wheel entries' },
-    { key: 'playRate', label: 'Play %' },
+    { key: 'playRate', label: 'Play %', title: '% of available matches played' },
   ]
 
   return (
+    <div className="relative">
+      {/* Gradient hint indicating horizontal scroll on mobile */}
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent z-10 sm:hidden" />
     <Table>
       <TableHeader>
         <TableRow>
           {cols.map(col => (
             <TableHead
               key={col.key}
-              title={col.title}
               onClick={() => handleSort(col.key)}
               className="cursor-pointer select-none whitespace-nowrap"
             >
-              <span className="inline-flex items-center gap-1">
-                {col.label}
-                {col.key === 'playRate' && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <InfoIcon className="size-3 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>% of available matches played</TooltipContent>
-                  </Tooltip>
-                )}
-                {sortKey === col.key ? (
-                  sortAsc ? (
-                    <ChevronUpIcon className="size-3" />
-                  ) : (
-                    <ChevronDownIcon className="size-3" />
-                  )
-                ) : null}
-              </span>
+              {col.title ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      className="inline-flex items-center gap-1"
+                      title={isTouch ? col.title : undefined}
+                    >
+                      {col.label}
+                      {sortKey === col.key ? (
+                        sortAsc ? <ChevronUpIcon className="size-3" /> : <ChevronDownIcon className="size-3" />
+                      ) : null}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>{col.title}</TooltipContent>
+                </Tooltip>
+              ) : (
+                <span className="inline-flex items-center gap-1">
+                  {col.label}
+                  {sortKey === col.key ? (
+                    sortAsc ? <ChevronUpIcon className="size-3" /> : <ChevronDownIcon className="size-3" />
+                  ) : null}
+                </span>
+              )}
             </TableHead>
           ))}
         </TableRow>
@@ -130,5 +142,6 @@ export function PlayerStatsTable({ stats }: PlayerStatsTableProps) {
         ))}
       </TableBody>
     </Table>
+    </div>
   )
 }

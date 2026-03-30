@@ -98,7 +98,7 @@ export function NoShowDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm max-h-[85vh] flex flex-col overflow-hidden">
+      <DialogContent className="sm:max-w-sm max-h-[85dvh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Any no-shows?</DialogTitle>
           <DialogDescription>

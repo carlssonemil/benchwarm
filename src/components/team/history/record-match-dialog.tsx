@@ -188,7 +188,7 @@ export function RecordMatchDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[92vh] flex flex-col overflow-hidden">
+      <DialogContent className="sm:max-w-md max-h-[92dvh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit match' : 'Record past match'}</DialogTitle>
         </DialogHeader>
@@ -231,13 +231,18 @@ export function RecordMatchDialog({
 
             <div className="flex flex-col gap-0.5">
               {/* Header row */}
-              <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 px-3 pb-1">
+              <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-2 sm:gap-x-4 px-3 pb-1">
                 <span />
-                <span className="text-xs text-muted-foreground w-16 text-center">Available</span>
-                <span className="text-xs text-muted-foreground w-12 text-center">Played</span>
+                <span className="text-xs text-muted-foreground w-14 text-center">Available</span>
+                <span className="text-xs text-muted-foreground w-10 text-center">Played</span>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="text-xs text-muted-foreground w-12 text-center cursor-default">NS/Sub</span>
+                    <span className="text-xs text-muted-foreground w-10 text-center cursor-default">
+                      <span className="inline-flex items-center justify-center gap-0.5">
+                        <span className="size-2 rounded-full bg-rose-400 shrink-0" />
+                        <span className="size-2 rounded-full bg-sky-400 shrink-0" />
+                      </span>
+                    </span>
                   </TooltipTrigger>
                   <TooltipContent>No-show (red) · Stepped in as sub (blue)</TooltipContent>
                 </Tooltip>
@@ -246,13 +251,13 @@ export function RecordMatchDialog({
               {playerRows.map(r => (
                 <div
                   key={r.player.id}
-                  className="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 items-center px-3 py-1.5 rounded-lg hover:bg-muted/40"
+                  className="grid grid-cols-[1fr_auto_auto_auto] gap-x-2 sm:gap-x-4 items-center px-3 py-1.5 rounded-lg hover:bg-muted/40"
                 >
-                  <span className={`text-sm ${!r.available ? 'text-muted-foreground' : ''}`}>
+                  <span className={`text-sm truncate ${!r.available ? 'text-muted-foreground' : ''}`}>
                     {r.player.name}
                   </span>
 
-                  <div className="w-16 flex justify-center">
+                  <div className="w-14 flex justify-center">
                     <Checkbox
                       checked={r.available}
                       onCheckedChange={v => setAvailable(r.player.id, !!v)}
@@ -260,7 +265,7 @@ export function RecordMatchDialog({
                     />
                   </div>
 
-                  <div className="w-12 flex justify-center">
+                  <div className="w-10 flex justify-center">
                     <Checkbox
                       checked={r.played}
                       onCheckedChange={v => setPlayed(r.player.id, !!v)}
@@ -268,7 +273,7 @@ export function RecordMatchDialog({
                     />
                   </div>
 
-                  <div className="w-12 flex justify-center">
+                  <div className="w-10 flex justify-center">
                     {r.played && (
                       <Tooltip>
                         <TooltipTrigger asChild>

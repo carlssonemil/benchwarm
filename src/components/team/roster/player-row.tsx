@@ -147,7 +147,7 @@ export function PlayerRow({ player, slug, isAdmin, getPinHash, bankData, avatarC
           )}
 
           {isAdmin && (
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-1 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

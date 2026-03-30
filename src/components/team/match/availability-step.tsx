@@ -50,7 +50,7 @@ export function AvailabilityStep({
           <button
             type="button"
             onClick={selectAll}
-            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 px-2 py-1.5"
           >
             All
           </button>
@@ -58,7 +58,7 @@ export function AvailabilityStep({
           <button
             type="button"
             onClick={clearAll}
-            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 px-2 py-1.5"
           >
             None
           </button>

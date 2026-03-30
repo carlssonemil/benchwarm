@@ -86,7 +86,7 @@ export function UpcomingMatchCard({
             {isAdmin && (<>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="size-7 p-0">
+                  <Button variant="ghost" size="sm" className="relative size-8 sm:size-7 p-0 after:absolute after:inset-[-6px] after:content-['']">
                     <MoreHorizontalIcon className="size-4" />
                   </Button>
                 </DropdownMenuTrigger>

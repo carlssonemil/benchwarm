@@ -104,7 +104,7 @@ export function MatchWizard({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       {/* Wider on step 3 to give the wheel breathing room */}
-      <DialogContent className={`max-h-[92vh] flex flex-col overflow-hidden transition-all duration-300 ${step === 3 ? 'sm:max-w-xl' : 'sm:max-w-lg'}`}>
+      <DialogContent className={`max-h-[92dvh] flex flex-col overflow-hidden transition-all duration-300 ${step === 3 ? 'sm:max-w-xl' : 'sm:max-w-lg'}`}>
         <DialogHeader>
           <DialogTitle>
             {existingMatchId ? 'Assign players' : 'New match'} · {activeSeason.name}

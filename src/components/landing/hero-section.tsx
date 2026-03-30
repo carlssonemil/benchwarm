@@ -93,7 +93,7 @@ export function HeroSection() {
           </div>
 
           {/* Right: demo wheel */}
-          <div className="shrink-0 flex flex-col items-center">
+          <div className="hidden md:flex shrink-0 flex-col items-center">
             <DemoWheel size={280} />
           </div>
         </div>
