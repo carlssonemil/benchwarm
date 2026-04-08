@@ -9,7 +9,9 @@ import { SpinningWheel, type SpinningWheelHandle, type WheelSegment } from '@/co
 import { WheelControls, type ControlsPhase } from '@/components/team/wheel/wheel-controls'
 import { runSelection, type SelectionResult } from '@/lib/selection'
 import { PLAYER_COLORS } from '@/lib/constants'
-import { ArrowLeftIcon, PartyPopperIcon } from 'lucide-react'
+import { ArrowLeftIcon, DownloadIcon, LoaderCircleIcon, PartyPopperIcon } from 'lucide-react'
+import { useGifRecorder, type SpinRecord } from '@/components/team/wheel/use-gif-recorder'
+import { downloadBlob } from '@/lib/download'
 import type { PlayerWithBank } from '@/types/database'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -87,15 +89,20 @@ export function WheelStep({ bankedPlayers, matchSize, onBack, onConfirm, stepInd
 
   const [autoSpin, setAutoSpin] = useState(false)
 
+  // ── GIF recording ────────────────────────────────────────────────────────
+  const spinRecordsRef = useRef<SpinRecord[]>([])
+  const { generateGif, gifBlob, isEncoding } = useGifRecorder()
+
   // ── Handlers ─────────────────────────────────────────────────────────────
 
   const handleSpin = useCallback(() => {
     if (pool.length === 0) return
     const winner = pickWeighted(pool)
+    spinRecordsRef.current.push({ segments, winnerId: winner.id, winnerName: winner.name })
     setPendingWinner(winner)
     setPhase('spinning')
     wheelRef.current?.spin(winner.id)
-  }, [pool])
+  }, [pool, segments])
 
   const handleSpinEnd = useCallback((_winnerId: string) => {
     setPhase('landed')
@@ -112,19 +119,15 @@ export function WheelStep({ bankedPlayers, matchSize, onBack, onConfirm, stepInd
     setPendingWinner(null)
 
     if (newPicked.length >= slotsToFill) {
-      // All spins done — build result and confirm
-      onConfirm({
-        guaranteed,
-        picked: newPicked,
-        notPicked: newPool,
-        spinNeeded: true,
-      })
+      // All spins done — show summary with GIF download
+      setPhase('done')
+      generateGif(spinRecordsRef.current, 280)
     } else {
       // More spins needed — remount wheel with updated pool
       setPoolKey(k => k + 1)
       setPhase('ready')
     }
-  }, [pendingWinner, picked, pool, slotsToFill, guaranteed, onConfirm])
+  }, [pendingWinner, picked, pool, slotsToFill, generateGif])
 
   const handleQuickSpin = useCallback(() => {
     setAutoSpin(true)
@@ -183,6 +186,59 @@ export function WheelStep({ bankedPlayers, matchSize, onBack, onConfirm, stepInd
           <div className="absolute left-1/2 -translate-x-1/2">{stepIndicator}</div>
           
           <Button onClick={() => onConfirm(result)}>
+            Confirm lineup
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Done — all spins complete, show summary + GIF download ───────────────
+  if (phase === 'done') {
+    const allPlaying = [...guaranteed, ...picked]
+    const notPicked = pool
+
+    return (
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-col items-center gap-3 py-4 text-center">
+          <PartyPopperIcon className="size-10 text-primary" />
+          <div>
+            <p className="font-medium">Lineup complete!</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {totalSpins} {totalSpins === 1 ? 'spin' : 'spins'} completed
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-0.5">
+          {allPlaying.map(p => (
+            <div key={p.id} className="flex items-center justify-between rounded-lg px-3 py-2 bg-emerald-50 dark:bg-emerald-900/10">
+              <span className="text-sm font-medium">{p.name}</span>
+              {p.is_guaranteed && <GuaranteedBadge streak={p.consecutive_sit_outs} />}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-center gap-2 pt-2">
+          <Button
+            variant="outline"
+            disabled={isEncoding || !gifBlob}
+            onClick={() => {
+              if (gifBlob) downloadBlob(gifBlob, 'benchwarm-lineup.gif')
+            }}
+            className="gap-2"
+          >
+            {isEncoding
+              ? <><LoaderCircleIcon className="size-4 animate-spin" /> Creating GIF…</>
+              : <><DownloadIcon className="size-4" /> Download GIF</>
+            }
+          </Button>
+
+          <Button
+            onClick={() =>
+              onConfirm({ guaranteed, picked, notPicked, spinNeeded: true })
+            }
+          >
             Confirm lineup
           </Button>
         </div>

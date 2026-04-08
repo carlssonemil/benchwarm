@@ -6,6 +6,15 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: '2026-04-08',
+    title: 'Share your lineup picks as a GIF',
+    description: [
+      'After all spins complete, a summary screen shows the full lineup with a "Download GIF" button.',
+      'The GIF replays every spin in sequence — one shareable clip of the entire selection process.',
+      'Works with both manual spins and Quick spin. Drag it straight into Discord.',
+    ],
+  },
+  {
     date: '2026-03-30',
     title: 'No-show & replacement updates',
     description: [
