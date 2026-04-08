@@ -7,11 +7,12 @@ export type ChangelogEntry = {
 export const changelog: ChangelogEntry[] = [
   {
     date: '2026-04-08',
-    title: 'Share your lineup picks as a GIF',
+    title: 'Player avatars, Steam profiles & GIF export',
     description: [
-      'After all spins complete, a summary screen shows the full lineup with a "Download GIF" button.',
-      'The GIF replays every spin in sequence — one shareable clip of the entire selection process.',
-      'Works with both manual spins and Quick spin. Drag it straight into Discord.',
+      'Players now have avatars — link a Steam profile by ID or URL to auto-fetch the avatar and display name, or set a custom image URL manually.',
+      'Avatars appear throughout the app: roster, match wizard, history, and stats.',
+      'Steam avatars refresh in the background once a day.',
+      'After all picks are made, download a GIF of the full spin sequence to share in Discord.',
     ],
   },
   {

@@ -28,11 +28,14 @@ CREATE TABLE teams (
 );
 
 CREATE TABLE players (
-  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  team_id    UUID        NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
-  name       TEXT        NOT NULL CHECK (char_length(name) <= 60),
-  is_active  BOOLEAN     NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  team_id           UUID        NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  name              TEXT        NOT NULL CHECK (char_length(name) <= 60),
+  is_active         BOOLEAN     NOT NULL DEFAULT true,
+  avatar_url        TEXT,
+  steam_id          TEXT,
+  steam_fetched_at  TIMESTAMPTZ,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE seasons (

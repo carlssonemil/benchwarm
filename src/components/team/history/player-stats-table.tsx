@@ -10,6 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { ChevronUpIcon, ChevronDownIcon } from 'lucide-react'
+import { PlayerAvatar } from '@/components/player-avatar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { PlayerStat } from '@/types/database'
 
@@ -113,7 +114,12 @@ export function PlayerStatsTable({ stats }: PlayerStatsTableProps) {
       <TableBody>
         {sorted.map(s => (
           <TableRow key={s.player.id}>
-            <TableCell className="font-medium">{s.player.name}</TableCell>
+            <TableCell className="font-medium">
+              <div className="flex items-center gap-2">
+                <PlayerAvatar player={s.player} size="sm" />
+                {s.player.name}
+              </div>
+            </TableCell>
             <TableCell>{s.gamesPlayed}</TableCell>
             <TableCell>{s.gamesSatOut}</TableCell>
             <TableCell>{s.timesUnavailable}</TableCell>

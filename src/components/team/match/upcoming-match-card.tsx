@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { MoreHorizontalIcon, UsersIcon, CheckCircleIcon, Trash2Icon, PencilIcon } from 'lucide-react'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { PlayerAvatar } from '@/components/player-avatar'
 import type { MatchWithPlayers } from '@/types/database'
 
 interface UpcomingMatchCardProps {
@@ -78,11 +78,7 @@ export function UpcomingMatchCard({
           </div>
           
           <div className="flex items-center gap-2">
-            {hasPlayers && playing.length > 0 && (
-              <Badge variant="secondary" className="text-xs bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 shrink-0">
-                {playing.length} playing
-              </Badge>
-            )}
+            {/* Removed "X playing" badge — the player list below makes it redundant */}
             {isAdmin && (<>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -153,12 +149,10 @@ export function UpcomingMatchCard({
             )}
           </div>
         ) : (
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-x-3 gap-y-2">
             {playing.map(p => (
-              <span
-                key={p.player.name}
-                className="text-sm px-3 py-1 rounded-full font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
-              >
+              <span key={p.player.id} className="inline-flex items-center gap-1.5 text-sm font-medium">
+                <PlayerAvatar player={p.player} size="sm" />
                 {p.player.name}
               </span>
             ))}

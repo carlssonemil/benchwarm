@@ -23,9 +23,10 @@ interface UpcomingMatchesProps {
   team: Team
   initialSeasons: Season[]
   activePlayers: Player[]
+  dataVersion: number
 }
 
-export function UpcomingMatches({ team, initialSeasons, activePlayers }: UpcomingMatchesProps) {
+export function UpcomingMatches({ team, initialSeasons, activePlayers, dataVersion }: UpcomingMatchesProps) {
   const router = useRouter()
   const { isAdmin, getStoredPinHash } = useAdmin(team.slug)
 
@@ -45,7 +46,7 @@ export function UpcomingMatches({ team, initialSeasons, activePlayers }: Upcomin
       const data = await getPlannedMatchesWithPlayers(team.id)
       setMatches(data)
     })
-  }, [team.id])
+  }, [team.id, dataVersion])
 
   async function refresh() {
     const data = await getPlannedMatchesWithPlayers(team.id)

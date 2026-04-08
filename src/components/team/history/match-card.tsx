@@ -14,7 +14,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { MoreHorizontalIcon, PencilIcon, Undo2Icon, Trash2Icon, ChevronDownIcon, UserXIcon } from 'lucide-react'
-import type { MatchWithPlayers } from '@/types/database'
+import { PlayerAvatar } from '@/components/player-avatar'
+import type { MatchWithPlayers, Player } from '@/types/database'
 
 interface MatchCardProps {
   match: MatchWithPlayers
@@ -167,35 +168,35 @@ export function MatchCard({ match, isAdmin, onDelete, onRevert, onEdit, onNoShow
               {playing.length > 0 && (
                 <PlayerGroup
                   label="Playing"
-                  players={playing.map(p => p.player.name)}
+                  players={playing.map(p => p.player)}
                   variant="playing"
                 />
               )}
               {noShows.length > 0 && (
                 <PlayerGroup
                   label="No-show"
-                  players={noShows.map(p => p.player.name)}
+                  players={noShows.map(p => p.player)}
                   variant="noshow"
                 />
               )}
               {replacements.length > 0 && (
                 <PlayerGroup
                   label="Stepped in"
-                  players={replacements.map(p => p.player.name)}
+                  players={replacements.map(p => p.player)}
                   variant="replacement"
                 />
               )}
               {satOut.length > 0 && (
                 <PlayerGroup
                   label="Sat out"
-                  players={satOut.map(p => p.player.name)}
+                  players={satOut.map(p => p.player)}
                   variant="satout"
                 />
               )}
               {unavailable.length > 0 && (
                 <PlayerGroup
                   label="Unavailable"
-                  players={unavailable.map(p => p.player.name)}
+                  players={unavailable.map(p => p.player)}
                   variant="unavailable"
                 />
               )}
@@ -213,7 +214,7 @@ function PlayerGroup({
   variant,
 }: {
   label: string
-  players: string[]
+  players: Pick<Player, 'id' | 'name' | 'avatar_url'>[]
   variant: 'playing' | 'noshow' | 'replacement' | 'satout' | 'unavailable'
 }) {
   const dotColor =
@@ -227,17 +228,6 @@ function PlayerGroup({
             ? 'bg-amber-500'
             : 'bg-muted-foreground/40'
 
-  const pillClass =
-    variant === 'playing'
-      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
-      : variant === 'noshow'
-        ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300'
-        : variant === 'replacement'
-          ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300'
-          : variant === 'satout'
-            ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
-            : 'bg-muted text-muted-foreground'
-
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-1.5">
@@ -247,14 +237,15 @@ function PlayerGroup({
           {label} ({players.length})
         </span>
       </div>
-      
-      <div className="flex flex-wrap gap-1.5 pl-3.5">
-        {players.map(name => (
+
+      <div className="flex flex-wrap gap-x-3 gap-y-1.5 pl-3.5">
+        {players.map(player => (
           <span
-            key={name}
-            className={`text-xs px-2 py-0.5 rounded-full font-medium ${pillClass}`}
+            key={player.id}
+            className="inline-flex items-center gap-1 text-xs font-medium"
           >
-            {name}
+            <PlayerAvatar player={player} size="sm" />
+            {player.name}
           </span>
         ))}
       </div>

@@ -10,6 +10,7 @@ import { GuaranteedBadge } from './guaranteed-badge'
 import { saveMatch, assignPlayersToPlannedMatch } from '@/actions/match-actions'
 import { toast } from 'sonner'
 import { ArrowLeftIcon, SaveIcon, CalendarIcon } from 'lucide-react'
+import { PlayerAvatar } from '@/components/player-avatar'
 import type { Player, PlayerWithBank } from '@/types/database'
 import type { SelectionResult } from '@/lib/selection'
 
@@ -135,12 +136,12 @@ export function ResultsStep({
       {/* Playing */}
       <Section label={`Playing (${selectedIds.size})`}>
         {selection.guaranteed.map(p => (
-          <ResultRow key={p.id} name={p.name}>
+          <ResultRow key={p.id} player={p}>
             <GuaranteedBadge streak={p.consecutive_sit_outs} />
           </ResultRow>
         ))}
         {selection.picked.map(p => (
-          <ResultRow key={p.id} name={p.name}>
+          <ResultRow key={p.id} player={p}>
             <Badge className="text-xs bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
               Picked
             </Badge>
@@ -152,7 +153,7 @@ export function ResultsStep({
       {selection.notPicked.length > 0 && (
         <Section label={`Sitting out (${selection.notPicked.length})`}>
           {selection.notPicked.map(p => (
-            <ResultRow key={p.id} name={p.name} muted>
+            <ResultRow key={p.id} player={p} muted>
               <span className="text-xs text-muted-foreground">
                 +{bankMap.get(p.id)?.bank_entries ?? 1} next week
               </span>
@@ -165,7 +166,7 @@ export function ResultsStep({
       {unavailablePlayers.length > 0 && (
         <Section label={`Unavailable (${unavailablePlayers.length})`}>
           {unavailablePlayers.map(p => (
-            <ResultRow key={p.id} name={p.name} muted>
+            <ResultRow key={p.id} player={p} muted>
               <span className="text-xs text-muted-foreground">+1 next week</span>
             </ResultRow>
           ))}
@@ -224,17 +225,20 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 }
 
 function ResultRow({
-  name,
+  player,
   children,
   muted = false,
 }: {
-  name: string
+  player: Player | PlayerWithBank
   children: React.ReactNode
   muted?: boolean
 }) {
   return (
     <div className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-muted/50">
-      <span className={`text-sm ${muted ? 'text-muted-foreground' : ''}`}>{name}</span>
+      <div className="flex items-center gap-2">
+        <PlayerAvatar player={player} size="sm" className={muted ? 'opacity-40' : undefined} />
+        <span className={`text-sm ${muted ? 'text-muted-foreground' : ''}`}>{player.name}</span>
+      </div>
       {children}
     </div>
   )

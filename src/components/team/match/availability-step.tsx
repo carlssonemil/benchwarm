@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ArrowRightIcon } from 'lucide-react'
+import { PlayerAvatar } from '@/components/player-avatar'
 import type { Player } from '@/types/database'
 
 interface AvailabilityStepProps {
@@ -71,7 +72,7 @@ export function AvailabilityStep({
         </p>
       ) : (
         <div className="flex flex-col gap-0.5">
-          {activePlayers.map(player => {
+          {[...activePlayers].sort((a, b) => a.name.localeCompare(b.name)).map(player => {
             const isAvailable = availableIds.includes(player.id)
             return (
               <label
@@ -83,6 +84,8 @@ export function AvailabilityStep({
                   checked={isAvailable}
                   onCheckedChange={() => toggle(player.id)}
                 />
+
+                <PlayerAvatar player={player} size="sm" className={!isAvailable ? 'opacity-40' : undefined} />
 
                 <span className={`text-sm select-none ${!isAvailable ? 'text-muted-foreground line-through' : ''}`}>
                   {player.name}

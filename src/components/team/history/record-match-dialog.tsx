@@ -15,6 +15,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { saveMatch, updateMatch } from '@/actions/match-actions'
 import { toast } from 'sonner'
+import { PlayerAvatar } from '@/components/player-avatar'
 import type { MatchWithPlayers, Player, Team } from '@/types/database'
 
 interface RecordMatchDialogProps {
@@ -253,9 +254,12 @@ export function RecordMatchDialog({
                   key={r.player.id}
                   className="grid grid-cols-[1fr_auto_auto_auto] gap-x-2 sm:gap-x-4 items-center px-3 py-1.5 rounded-lg hover:bg-muted/40"
                 >
-                  <span className={`text-sm truncate ${!r.available ? 'text-muted-foreground' : ''}`}>
-                    {r.player.name}
-                  </span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <PlayerAvatar player={r.player} size="sm" className={!r.available ? 'opacity-40 shrink-0' : 'shrink-0'} />
+                    <span className={`text-sm truncate ${!r.available ? 'text-muted-foreground' : ''}`}>
+                      {r.player.name}
+                    </span>
+                  </div>
 
                   <div className="w-14 flex justify-center">
                     <Checkbox

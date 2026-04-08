@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
@@ -69,9 +69,10 @@ function formatDate(dateStr: string | null): string {
 interface SeasonManagerProps {
   team: Team
   initialSeasons: Season[]
+  dataVersion: number
 }
 
-export function SeasonManager({ team, initialSeasons }: SeasonManagerProps) {
+export function SeasonManager({ team, initialSeasons, dataVersion }: SeasonManagerProps) {
   const router = useRouter()
   const { isAdmin, getStoredPinHash } = useAdmin(team.slug)
   const [createOpen, setCreateOpen] = useState(false)
@@ -84,6 +85,10 @@ export function SeasonManager({ team, initialSeasons }: SeasonManagerProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [matchesCache, setMatchesCache] = useState<Record<string, Match[]>>({})
   const [loadingId, setLoadingId] = useState<string | null>(null)
+
+  useEffect(() => {
+    setMatchesCache({})
+  }, [dataVersion])
 
   async function toggleExpand(seasonId: string) {
     if (expandedId === seasonId) {

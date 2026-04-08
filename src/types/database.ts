@@ -14,6 +14,9 @@ export interface Player {
   team_id: string
   name: string
   is_active: boolean
+  avatar_url: string | null
+  steam_id: string | null
+  steam_fetched_at: string | null
   created_at: string
 }
 

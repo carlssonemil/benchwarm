@@ -8,7 +8,6 @@ import {
   useRef,
   useState,
 } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { drawWheelFrame, type WheelSegment } from './wheel-canvas'
 
@@ -54,7 +53,6 @@ export const SpinningWheel = forwardRef<SpinningWheelHandle, SpinningWheelProps>
     const sizeRef = useRef(sizeProp ?? 300)
 
     const [size, setSize] = useState(sizeProp ?? 300)
-    const [winner, setWinner] = useState<WheelSegment | null>(null)
     const [isSpinning, setIsSpinning] = useState(false)
 
     // ── Responsive sizing via ResizeObserver ─────────────────────────────────
@@ -142,7 +140,6 @@ export const SpinningWheel = forwardRef<SpinningWheelHandle, SpinningWheelProps>
         const startTime = performance.now()
 
         setIsSpinning(true)
-        setWinner(null)
 
         if (animRef.current !== null) cancelAnimationFrame(animRef.current)
 
@@ -161,9 +158,7 @@ export const SpinningWheel = forwardRef<SpinningWheelHandle, SpinningWheelProps>
             angleRef.current = finalAngle
             draw(finalAngle)
 
-            const winnerSeg = segments.find(s => s.id === winnerId)!
             setIsSpinning(false)
-            setWinner(winnerSeg)
 
             // Small delay before confetti so the wheel fully settles
             setTimeout(fireConfetti, 150)
@@ -186,41 +181,9 @@ export const SpinningWheel = forwardRef<SpinningWheelHandle, SpinningWheelProps>
     }, [])
 
     return (
-      <div ref={containerRef} className="flex flex-col items-center gap-4 w-full">
-        {/* Canvas */}
+      <div ref={containerRef} className="flex flex-col items-center w-full">
         <div className="relative flex items-center justify-center">
           <canvas ref={canvasRef} className="rounded-full" />
-        </div>
-
-        {/* Winner reveal */}
-        <div className="h-14 flex items-center justify-center">
-          <AnimatePresence mode="wait">
-            {winner && !isSpinning && (
-              <motion.div
-                key={winner.id}
-                initial={{ opacity: 0, y: 16, scale: 0.85 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.9 }}
-                transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-                className="px-7 py-2.5 rounded-xl font-bold text-xl text-white shadow-lg select-none"
-                style={{ backgroundColor: winner.color }}
-              >
-                {winner.name}
-              </motion.div>
-            )}
-
-            {isSpinning && (
-              <motion.p
-                key="spinning"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-sm text-muted-foreground animate-pulse"
-              >
-                Spinning…
-              </motion.p>
-            )}
-          </AnimatePresence>
         </div>
       </div>
     )

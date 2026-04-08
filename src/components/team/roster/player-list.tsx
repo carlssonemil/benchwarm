@@ -3,15 +3,12 @@
 import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { PlayerRow } from './player-row'
-import { addPlayer } from '@/actions/player-actions'
+import { PlayerProfileDialog } from './player-profile-dialog'
 import { computePlayerBanks } from '@/actions/match-actions'
 import { useAdmin } from '@/hooks/use-admin'
-import { toast } from 'sonner'
 import { PlusIcon, LockIcon } from 'lucide-react'
-import { PLAYER_COLORS } from '@/lib/constants'
 import type { Player, PlayerWithBank, Season, Team } from '@/types/database'
 
 interface PlayerListProps {
@@ -23,16 +20,12 @@ interface PlayerListProps {
 export function PlayerList({ team, initialPlayers, activeSeason }: PlayerListProps) {
   const router = useRouter()
   const { isAdmin, getStoredPinHash } = useAdmin(team.slug)
-  const [newName, setNewName] = useState('')
-  const [isPending, startTransition] = useTransition()
+  const [addOpen, setAddOpen] = useState(false)
   const [bankData, setBankData] = useState<PlayerWithBank[]>([])
 
   const collator = new Intl.Collator(undefined, { sensitivity: 'base' })
   const active = initialPlayers.filter(p => p.is_active).sort((a, b) => collator.compare(a.name, b.name))
   const inactive = initialPlayers.filter(p => !p.is_active).sort((a, b) => collator.compare(a.name, b.name))
-
-  // Stable color assignment by player index in the active list
-  const colorMap = new Map(active.map((p, i) => [p.id, PLAYER_COLORS[i % PLAYER_COLORS.length]]))
 
   useEffect(() => {
     if (!activeSeason || active.length === 0) return
@@ -41,24 +34,6 @@ export function PlayerList({ team, initialPlayers, activeSeason }: PlayerListPro
 
   const bankMap = new Map(bankData.map(p => [p.id, p]))
 
-  function handleAddPlayer(e: React.FormEvent) {
-    e.preventDefault()
-    if (!newName.trim()) return
-
-    startTransition(async () => {
-      const pinHash = getStoredPinHash()
-      if (!pinHash) return
-      const result = await addPlayer(team.slug, pinHash, newName)
-      if (result.error) {
-        toast.error(result.error)
-      } else {
-        toast.success(`${newName.trim()} added to roster.`)
-        setNewName('')
-        router.refresh()
-      }
-    })
-  }
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -66,29 +41,30 @@ export function PlayerList({ team, initialPlayers, activeSeason }: PlayerListPro
           <span className="font-medium text-foreground">{active.length}</span> active player{active.length !== 1 ? 's' : ''}{' '}
           &middot; {team.match_size} play each match
         </p>
+
+        {isAdmin && (
+          <Button size="sm" variant="outline" onClick={() => setAddOpen(true)}>
+            <PlusIcon />
+            Add player
+          </Button>
+        )}
       </div>
 
       {isAdmin && (
-        <form onSubmit={handleAddPlayer} className="flex gap-2">
-          <Input
-            placeholder="Player name"
-            value={newName}
-            onChange={e => setNewName(e.target.value)}
-            disabled={isPending}
-            className="flex-1"
-          />
-          
-          <Button type="submit" disabled={isPending || !newName.trim()}>
-            <PlusIcon />
-            Add
-          </Button>
-        </form>
+        <PlayerProfileDialog
+          mode="create"
+          slug={team.slug}
+          getPinHash={getStoredPinHash}
+          open={addOpen}
+          onOpenChange={setAddOpen}
+          onSaved={() => router.refresh()}
+        />
       )}
 
       {initialPlayers.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-12 text-center">
           <p className="text-muted-foreground text-sm">
-            {isAdmin ? 'Add your first player above.' : 'No players on the roster yet.'}
+            {isAdmin ? 'Add your first player using the button above.' : 'No players on the roster yet.'}
           </p>
         </div>
       ) : (
@@ -101,7 +77,6 @@ export function PlayerList({ team, initialPlayers, activeSeason }: PlayerListPro
               isAdmin={isAdmin}
               getPinHash={getStoredPinHash}
               bankData={bankMap.get(player.id)}
-              avatarColor={colorMap.get(player.id) ?? '#6366f1'}
             />
           ))}
 
@@ -119,7 +94,8 @@ export function PlayerList({ team, initialPlayers, activeSeason }: PlayerListPro
                   slug={team.slug}
                   isAdmin={isAdmin}
                   getPinHash={getStoredPinHash}
-                  avatarColor="#6366f1"
+
+
                 />
               ))}
             </>

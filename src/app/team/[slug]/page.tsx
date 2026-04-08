@@ -1,5 +1,5 @@
 import { getTeamBySlug } from '@/actions/team-actions'
-import { getPlayersByTeamId } from '@/actions/player-actions'
+import { getPlayersByTeamId, refreshStaleSteamProfiles } from '@/actions/player-actions'
 import { getSeasonsByTeamId } from '@/actions/season-actions'
 import { getPlannedMatchesWithPlayers } from '@/actions/match-actions'
 import { notFound } from 'next/navigation'
@@ -38,6 +38,11 @@ export default async function TeamPage({ params }: TeamPageProps) {
     getPlannedMatchesWithPlayers(team.id),
   ])
 
+  const dataVersion = Date.now()
+
+  // Fire-and-forget: refresh stale Steam avatars in the background
+  void refreshStaleSteamProfiles(team.id)
+
   const hasSeasons = seasons.length > 0
   const hasActivePlayers = players.some(p => p.is_active)
   const hasPlannedMatches = plannedMatches.length > 0
@@ -60,6 +65,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
               team={team}
               initialSeasons={seasons}
               activePlayers={players.filter(p => p.is_active)}
+              dataVersion={dataVersion}
             />
           )}
         </TabsContent>
@@ -74,17 +80,19 @@ export default async function TeamPage({ params }: TeamPageProps) {
             teamSlug={team.slug}
             team={team}
             activePlayers={players.filter(p => p.is_active)}
+            dataVersion={dataVersion}
           />
         </TabsContent>
 
         <TabsContent value="stats" className="pt-6">
-          <PlayerStatsView seasons={seasons} team={team} />
+          <PlayerStatsView seasons={seasons} team={team} dataVersion={dataVersion} />
         </TabsContent>
 
         <TabsContent value="seasons" className="pt-6">
           <SeasonManager
             team={team}
             initialSeasons={seasons}
+            dataVersion={dataVersion}
           />
         </TabsContent>
       </TeamTabs>

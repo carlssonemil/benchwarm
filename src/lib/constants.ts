@@ -18,3 +18,12 @@ export const PLAYER_COLORS = [
   '#14b8a6', // teal
   '#a855f7', // purple
 ]
+
+export function playerColor(playerId: string): string {
+  let hash = 0
+  for (let i = 0; i < playerId.length; i++) {
+    hash = ((hash << 5) - hash) + playerId.charCodeAt(i)
+    hash |= 0
+  }
+  return PLAYER_COLORS[Math.abs(hash) % PLAYER_COLORS.length]
+}

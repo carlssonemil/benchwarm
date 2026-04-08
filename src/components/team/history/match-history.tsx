@@ -18,9 +18,10 @@ interface MatchHistoryProps {
   teamSlug: string
   team: Team
   activePlayers: Player[]
+  dataVersion: number
 }
 
-export function MatchHistory({ seasons, teamSlug, team, activePlayers }: MatchHistoryProps) {
+export function MatchHistory({ seasons, teamSlug, team, activePlayers, dataVersion }: MatchHistoryProps) {
   const router = useRouter()
   const { isAdmin, getStoredPinHash } = useAdmin(teamSlug)
 
@@ -44,7 +45,7 @@ export function MatchHistory({ seasons, teamSlug, team, activePlayers }: MatchHi
       const gds = await getMatchesWithPlayers(selectedSeasonId, team.id)
       setMatches(gds)
     })
-  }, [selectedSeasonId])
+  }, [selectedSeasonId, dataVersion])
 
   async function handleDelete(matchId: string) {
     const pinHash = getStoredPinHash()

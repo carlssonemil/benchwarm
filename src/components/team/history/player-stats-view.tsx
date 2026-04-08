@@ -9,9 +9,10 @@ import type { PlayerStat, Season, Team } from '@/types/database'
 interface PlayerStatsViewProps {
   seasons: Season[]
   team: Team
+  dataVersion: number
 }
 
-export function PlayerStatsView({ seasons, team }: PlayerStatsViewProps) {
+export function PlayerStatsView({ seasons, team, dataVersion }: PlayerStatsViewProps) {
   const defaultSeason =
     seasons.find(s => s.is_active) ??
     seasons.sort((a, b) => (b.start_date ?? b.created_at).localeCompare(a.start_date ?? a.created_at))[0] ??
@@ -28,7 +29,7 @@ export function PlayerStatsView({ seasons, team }: PlayerStatsViewProps) {
       const st = await getPlayerStats(selectedSeasonId, team.id)
       setStats(st)
     })
-  }, [selectedSeasonId])
+  }, [selectedSeasonId, dataVersion])
 
   if (seasons.length === 0) {
     return (

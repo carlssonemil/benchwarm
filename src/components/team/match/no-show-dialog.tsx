@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { markNoShows } from '@/actions/match-actions'
 import { toast } from 'sonner'
+import { PlayerAvatar } from '@/components/player-avatar'
 import type { MatchWithPlayers } from '@/types/database'
 
 interface NoShowDialogProps {
@@ -124,6 +125,7 @@ export function NoShowDialog({
                       onCheckedChange={v => toggleNoShow(p.player_id, !!v)}
                       disabled={isPending}
                     />
+                    <PlayerAvatar player={p.player} size="sm" className={noShowIds.has(p.player_id) ? 'opacity-40' : undefined} />
                     <span className={`text-sm flex-1 ${noShowIds.has(p.player_id) ? 'line-through text-muted-foreground' : ''}`}>
                       {p.player.name}
                     </span>
@@ -153,6 +155,7 @@ export function NoShowDialog({
                       onCheckedChange={v => toggleReplacement(p.player_id, !!v)}
                       disabled={isPending}
                     />
+                    <PlayerAvatar player={p.player} size="sm" />
                     <span className="text-sm flex-1">{p.player.name}</span>
                     {replacementIds.has(p.player_id) && (
                       <span className="text-xs text-sky-600 dark:text-sky-400 font-medium">Stepped in</span>

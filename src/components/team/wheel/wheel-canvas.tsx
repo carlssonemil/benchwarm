@@ -13,6 +13,16 @@ export interface WheelSegment {
 const FONT_LARGE = 'bold 13px system-ui, -apple-system, sans-serif'
 const FONT_SMALL = 'bold 11px system-ui, -apple-system, sans-serif'
 
+/** Truncate text with ellipsis to fit within maxWidth (in canvas pixels). */
+function truncateText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
+  if (ctx.measureText(text).width <= maxWidth) return text
+  let t = text
+  while (t.length > 0 && ctx.measureText(t + '…').width > maxWidth) {
+    t = t.slice(0, -1)
+  }
+  return t + '…'
+}
+
 /**
  * Draws the full wheel frame at the given rotation angle.
  * Call this inside a requestAnimationFrame loop.
@@ -75,9 +85,9 @@ export function drawWheelFrame(
       ctx.shadowBlur = 3
       ctx.font = seg.arc > 0.55 ? FONT_LARGE : FONT_SMALL
 
-      // Constrain text to fit within segment width at that radius
+      // Truncate text to fit within segment width at that radius
       const maxTextWidth = 2 * textRadius * Math.sin(seg.arc / 2) * 0.8
-      ctx.fillText(seg.name, textRadius, 0, maxTextWidth)
+      ctx.fillText(truncateText(ctx, seg.name, maxTextWidth), textRadius, 0)
       ctx.restore()
     }
 

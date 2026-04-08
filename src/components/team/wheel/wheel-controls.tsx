@@ -11,8 +11,6 @@ interface WheelControlsProps {
   phase: ControlsPhase
   spinIndex: number      // 0-based, which spin we're on (0 = first)
   totalSpins: number     // how many spins total
-  winnerName?: string
-  winnerColor?: string
   onSpin: () => void
   onNext: () => void     // "Next pick" or "Confirm"
   onQuickSpin?: () => void
@@ -23,8 +21,6 @@ export function WheelControls({
   phase,
   spinIndex,
   totalSpins,
-  winnerName,
-  winnerColor,
   onSpin,
   onNext,
   onQuickSpin,

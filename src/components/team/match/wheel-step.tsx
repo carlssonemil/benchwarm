@@ -7,11 +7,13 @@ import { Badge } from '@/components/ui/badge'
 import { GuaranteedBadge } from './guaranteed-badge'
 import { SpinningWheel, type SpinningWheelHandle, type WheelSegment } from '@/components/team/wheel/spinning-wheel'
 import { WheelControls, type ControlsPhase } from '@/components/team/wheel/wheel-controls'
+import { PickedSlotsPreview } from '@/components/team/wheel/picked-slots-preview'
 import { runSelection, type SelectionResult } from '@/lib/selection'
-import { PLAYER_COLORS } from '@/lib/constants'
+import { playerColor } from '@/lib/constants'
 import { ArrowLeftIcon, DownloadIcon, LoaderCircleIcon, PartyPopperIcon } from 'lucide-react'
 import { useGifRecorder, type SpinRecord } from '@/components/team/wheel/use-gif-recorder'
 import { downloadBlob } from '@/lib/download'
+import { PlayerAvatar } from '@/components/player-avatar'
 import type { PlayerWithBank } from '@/types/database'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -61,10 +63,10 @@ export function WheelStep({ bankedPlayers, matchSize, onBack, onConfirm, stepInd
   )
   const slotsToFill = Math.max(0, matchSize - guaranteed.length)
 
-  // Stable color assignment based on original player order
+  // Stable color assignment based on player ID hash
   const colorMap = useMemo<Map<string, string>>(() => {
     const map = new Map<string, string>()
-    bankedPlayers.forEach((p, i) => map.set(p.id, PLAYER_COLORS[i % PLAYER_COLORS.length]))
+    bankedPlayers.forEach(p => map.set(p.id, playerColor(p.id)))
     return map
   }, [bankedPlayers])
 
@@ -200,21 +202,18 @@ export function WheelStep({ bankedPlayers, matchSize, onBack, onConfirm, stepInd
 
     return (
       <div className="flex flex-col gap-5">
-        <div className="flex flex-col items-center gap-3 py-4 text-center">
+        <div className="flex flex-col items-center gap-2 py-4 text-center">
           <PartyPopperIcon className="size-10 text-primary" />
-          <div>
-            <p className="font-medium">Lineup complete!</p>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {totalSpins} {totalSpins === 1 ? 'spin' : 'spins'} completed
-            </p>
-          </div>
+          <p className="font-medium">Lineup complete!</p>
         </div>
 
-        <div className="flex flex-col gap-0.5">
+        <div className="flex justify-center gap-4 flex-wrap px-2">
           {allPlaying.map(p => (
-            <div key={p.id} className="flex items-center justify-between rounded-lg px-3 py-2 bg-emerald-50 dark:bg-emerald-900/10">
-              <span className="text-sm font-medium">{p.name}</span>
-              {p.is_guaranteed && <GuaranteedBadge streak={p.consecutive_sit_outs} />}
+            <div key={p.id} className="flex flex-col items-center gap-1.5">
+              <PlayerAvatar player={p} color={colorMap.get(p.id)} size="lg" />
+              <p className="w-14 truncate text-xs text-center text-muted-foreground leading-none">
+                {p.name}
+              </p>
             </div>
           ))}
         </div>
@@ -260,45 +259,15 @@ export function WheelStep({ bankedPlayers, matchSize, onBack, onConfirm, stepInd
             {guaranteed.map(p => (
               <span
                 key={p.id}
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium text-white"
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium text-white max-w-[140px]"
                 style={{ backgroundColor: colorMap.get(p.id) }}
               >
-                {p.name}
+                <span className="truncate">{p.name}</span>
               </span>
             ))}
           </div>
         </div>
       )}
-
-      {/* Already-picked players */}
-      <AnimatePresence>
-        {picked.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="flex flex-col gap-1.5"
-          >
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Picked ({picked.length}/{totalSpins})
-            </p>
-
-            <div className="flex flex-wrap gap-1.5">
-              {picked.map(p => (
-                <motion.span
-                  key={p.id}
-                  initial={{ scale: 0.7, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium text-white"
-                  style={{ backgroundColor: colorMap.get(p.id) }}
-                >
-                  {p.name}
-                </motion.span>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Animated wheel — remounts between spins via key */}
       <AnimatePresence mode="wait">
@@ -321,12 +290,12 @@ export function WheelStep({ bankedPlayers, matchSize, onBack, onConfirm, stepInd
       {spinIndex === 0 && phase === 'ready' && (
         <div className="flex flex-wrap gap-1.5 justify-center max-w-xs mx-auto">
           {pool.map(p => (
-            <Badge key={p.id} variant="outline" className="text-xs gap-1">
+            <Badge key={p.id} variant="outline" className="text-xs gap-1 max-w-[120px]">
               <span
-                className="size-2 rounded-full inline-block"
+                className="size-2 rounded-full inline-block shrink-0"
                 style={{ backgroundColor: colorMap.get(p.id) }}
               />
-              {p.name}
+              <span className="truncate">{p.name}</span>
               {p.bank_entries > 1 && (
                 <span className="text-muted-foreground">×{p.bank_entries}</span>
               )}
@@ -335,13 +304,20 @@ export function WheelStep({ bankedPlayers, matchSize, onBack, onConfirm, stepInd
         </div>
       )}
 
+      {/* Picked players preview — hidden until first spin starts */}
+      {(spinIndex > 0 || phase !== 'ready') && <PickedSlotsPreview
+        totalSlots={totalSpins}
+        picked={picked}
+        pendingWinner={pendingWinner}
+        colorMap={colorMap}
+        phase={phase}
+      />}
+
       {/* Controls */}
       <WheelControls
         phase={phase}
         spinIndex={spinIndex}
         totalSpins={totalSpins}
-        winnerName={pendingWinner?.name}
-        winnerColor={pendingWinner ? (colorMap.get(pendingWinner.id) ?? '#6366f1') : undefined}
         onSpin={handleSpin}
         onNext={handleNext}
         onQuickSpin={totalSpins > 1 ? handleQuickSpin : undefined}

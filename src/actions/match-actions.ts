@@ -61,7 +61,9 @@ export async function getPlannedMatchesWithPlayers(teamId: string): Promise<Matc
       p.name             AS player_name,
       p.is_active        AS player_is_active,
       p.team_id          AS player_team_id,
-      p.created_at       AS player_created_at
+      p.created_at       AS player_created_at,
+      p.avatar_url       AS player_avatar_url,
+      p.steam_id         AS player_steam_id
     FROM matches g
     LEFT JOIN match_players gp ON gp.match_id = g.id
     LEFT JOIN players p ON p.id = gp.player_id
@@ -104,6 +106,9 @@ export async function getPlannedMatchesWithPlayers(teamId: string): Promise<Matc
           name: row.player_name as string,
           team_id: row.player_team_id as string,
           is_active: row.player_is_active as boolean,
+          avatar_url: (row.player_avatar_url as string | null) ?? null,
+          steam_id: (row.player_steam_id as string | null) ?? null,
+          steam_fetched_at: null,
           created_at: row.player_created_at as string,
         },
       })
@@ -353,7 +358,9 @@ export async function getMatchesWithPlayers(seasonId: string, teamId?: string): 
         p.name             AS player_name,
         p.is_active        AS player_is_active,
         p.team_id          AS player_team_id,
-        p.created_at       AS player_created_at
+        p.created_at       AS player_created_at,
+        p.avatar_url       AS player_avatar_url,
+        p.steam_id         AS player_steam_id
       FROM matches g
       JOIN match_players gp ON gp.match_id = g.id
       JOIN players p ON p.id = gp.player_id
@@ -374,7 +381,9 @@ export async function getMatchesWithPlayers(seasonId: string, teamId?: string): 
         p.name             AS player_name,
         p.is_active        AS player_is_active,
         p.team_id          AS player_team_id,
-        p.created_at       AS player_created_at
+        p.created_at       AS player_created_at,
+        p.avatar_url       AS player_avatar_url,
+        p.steam_id         AS player_steam_id
       FROM matches g
       JOIN match_players gp ON gp.match_id = g.id
       JOIN players p ON p.id = gp.player_id
@@ -415,6 +424,9 @@ export async function getMatchesWithPlayers(seasonId: string, teamId?: string): 
         name: row.player_name as string,
         team_id: row.player_team_id as string,
         is_active: row.player_is_active as boolean,
+        avatar_url: (row.player_avatar_url as string | null) ?? null,
+        steam_id: (row.player_steam_id as string | null) ?? null,
+        steam_fetched_at: null,
         created_at: row.player_created_at as string,
       },
     })
@@ -564,8 +576,8 @@ export async function markNoShows(
   return {}
 }
 
-export async function getPlayerStats(seasonId: string, teamId?: string): Promise<PlayerStat[]> {
-  const rows = await (seasonId === 'all' && teamId
+export async function getPlayerStats(seasonId: string, teamId: string): Promise<PlayerStat[]> {
+  const rows = await (seasonId === 'all'
     ? sql`
       SELECT
         p.id              AS player_id,
@@ -573,14 +585,16 @@ export async function getPlayerStats(seasonId: string, teamId?: string): Promise
         p.team_id,
         p.is_active,
         p.created_at      AS player_created_at,
+        p.avatar_url      AS player_avatar_url,
+        p.steam_id        AS player_steam_id,
         gp.was_available,
         gp.was_selected,
         gp.was_no_show,
         gp.was_replacement
-      FROM match_players gp
-      JOIN players p ON p.id = gp.player_id
-      JOIN matches g ON g.id = gp.match_id
-      WHERE g.team_id = ${teamId} AND g.status = 'completed'
+      FROM players p
+      LEFT JOIN match_players gp ON gp.player_id = p.id
+      LEFT JOIN matches g ON g.id = gp.match_id AND g.status = 'completed'
+      WHERE p.team_id = ${teamId} AND p.is_active = true
       ORDER BY p.id, g.played_at DESC, g.created_at DESC
     `
     : sql`
@@ -590,14 +604,16 @@ export async function getPlayerStats(seasonId: string, teamId?: string): Promise
         p.team_id,
         p.is_active,
         p.created_at      AS player_created_at,
+        p.avatar_url      AS player_avatar_url,
+        p.steam_id        AS player_steam_id,
         gp.was_available,
         gp.was_selected,
         gp.was_no_show,
         gp.was_replacement
-      FROM match_players gp
-      JOIN players p ON p.id = gp.player_id
-      JOIN matches g ON g.id = gp.match_id
-      WHERE g.season_id = ${seasonId} AND g.status = 'completed'
+      FROM players p
+      LEFT JOIN match_players gp ON gp.player_id = p.id
+      LEFT JOIN matches g ON g.id = gp.match_id AND g.status = 'completed' AND g.season_id = ${seasonId}
+      WHERE p.team_id = ${teamId} AND p.is_active = true
       ORDER BY p.id, g.played_at DESC, g.created_at DESC
     `)
 
@@ -615,17 +631,22 @@ export async function getPlayerStats(seasonId: string, teamId?: string): Promise
           name: row.player_name as string,
           team_id: row.team_id as string,
           is_active: row.is_active as boolean,
+          avatar_url: (row.player_avatar_url as string | null) ?? null,
+          steam_id: (row.player_steam_id as string | null) ?? null,
+          steam_fetched_at: null,
           created_at: row.player_created_at as string,
         },
         records: [],
       })
     }
-    byPlayer.get(pid)!.records.push({
-      was_available: row.was_available as boolean,
-      was_selected: row.was_selected as boolean,
-      was_no_show: row.was_no_show as boolean,
-      was_replacement: row.was_replacement as boolean,
-    })
+    if (row.was_available !== null) {
+      byPlayer.get(pid)!.records.push({
+        was_available: row.was_available as boolean,
+        was_selected: row.was_selected as boolean,
+        was_no_show: row.was_no_show as boolean,
+        was_replacement: row.was_replacement as boolean,
+      })
+    }
   }
 
   return Array.from(byPlayer.values())
